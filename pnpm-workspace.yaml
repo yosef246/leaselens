@@ -1,0 +1,6 @@
+# pnpm 11.10 build-script approvals (renamed from onlyBuiltDependencies -> allowBuilds).
+# Only these two native deps are approved to run install/build scripts.
+# Do NOT add here blindly — if pnpm reports a new "Ignored build script", stop and review.
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
