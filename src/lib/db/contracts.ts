@@ -56,3 +56,35 @@ export async function listContracts(userId: string): Promise<ContractRow[]> {
   if (error) throw new Error(`listContracts failed: ${error.message}`);
   return (data ?? []) as ContractRow[];
 }
+
+/** Explicit ownership check (belt-and-suspenders with RLS). Returns null if not the owner's. */
+export async function getContract(
+  userId: string,
+  contractId: string
+): Promise<ContractRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contracts")
+    .select("*")
+    .eq("id", contractId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(`getContract failed: ${error.message}`);
+  return (data as ContractRow | null) ?? null;
+}
+
+export async function updateContractStatus(
+  userId: string,
+  contractId: string,
+  status: ContractStatus
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("contracts")
+    .update({ status })
+    .eq("id", contractId)
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`updateContractStatus failed: ${error.message}`);
+}

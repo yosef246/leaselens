@@ -13,7 +13,9 @@
     "embed-laws": "node scripts/embed-laws.ts",
     "embed-laws:dry": "node scripts/embed-laws.ts --dry-run",
     "query-laws": "node scripts/query-laws.ts",
-    "scrape-laws": "node scripts/scrape-laws.ts"
+    "scrape-laws": "node scripts/scrape-laws.ts",
+    "make-fixture": "node scripts/make-fixture.ts",
+    "process:sample": "node scripts/process-sample.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
@@ -38,12 +40,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@pdf-lib/fontkit": "^1.1.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.20",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

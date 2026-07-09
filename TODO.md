@@ -9,6 +9,12 @@
       lexical, not semantic, on Hebrew, so any added surface tokens amplify word-match noise.
       **Conclusion: the lexical gap cannot be closed at embed time. It moves to P3 (hybrid).**
 
+## P3+ (contract processing)
+- [ ] Add OCR fallback for scanned contracts (tesseract.js or AWS Textract).
+      Today: a scanned/image PDF is detected (text < 100 chars for a > 100KB file) and
+      rejected with a clear Hebrew error (src/lib/pdf/extract.ts). OCR is out of free-tier
+      scope — revisit if real users hit it.
+
 ## P3 (post-MVP, on real user feedback)
 - [ ] Hybrid search: vector + tsvector keyword (Postgres FTS or pg_trgm).
       Bridges lexical gaps like פיקדון↔ערבות at query time without re-embedding.
