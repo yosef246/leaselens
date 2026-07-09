@@ -1,7 +1,8 @@
 # TODO — Retrieval Improvements Backlog
 
 ## P2 (recommended, cheap win)
-- [ ] Embed `section_title + "\n" + text` instead of body-only.
+- [ ] Embed `section_title + "\n" + text` (title only, NOT sign/chapter).
+      Prior test with title+sign+chapter caused Guarantee Law to dominate — avoid.
       Best-practice RAG — title carries semantic signal. Cost: ~$0.005, ~30min code.
 
 ## P3 (post-MVP, on real user feedback)
