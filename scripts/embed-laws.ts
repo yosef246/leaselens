@@ -28,6 +28,21 @@ import { chunkHebrewLaw, type LawChunk } from "../src/lib/chunking/hebrew-law-ch
 const DRY_RUN = process.argv.includes("--dry-run");
 const UPSERT_BATCH_SIZE = 200;
 
+/**
+ * The text we send to the embedding model for a chunk: BODY ONLY.
+ *
+ * Two experiments PROVED that prepending metadata regresses retrieval with
+ * text-embedding-3-small (which is lexical, not semantic, on Hebrew):
+ *   1. title + sign + chapter → חוק הערבות dominated on "ערבות", §25י dropped.
+ *   2. title only (P2)         → same failure: on Q1 ("השבת ערבות בסיום שכירות")
+ *      §25י fell out of top-5 entirely; חוק הערבות §2 took #1 (sim 0.536) purely on the
+ *      word "ערבות"/"ערב". Body-only keeps §25י at #1 (sim 0.482).
+ * The real lexical-gap fix lives in P3 (hybrid keyword+vector) — see TODO.md.
+ */
+function buildEmbedInput(row: PreparedRow): string {
+  return row.text;
+}
+
 interface PreparedRow {
   law_name: string;
   short_title: string;
@@ -152,7 +167,7 @@ async function main(): Promise<void> {
   const { getSupabaseAdmin } = await import("../src/lib/supabase/admin.ts");
 
   console.log(`\n[embed-laws] Embedding ${allRows.length} chunks via OpenAI (text-embedding-3-small)...`);
-  const embeddings = await embedTexts(allRows.map((r) => r.text));
+  const embeddings = await embedTexts(allRows.map(buildEmbedInput));
 
   const supabase = getSupabaseAdmin();
   let upserted = 0;

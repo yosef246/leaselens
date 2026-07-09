@@ -30,5 +30,11 @@ Israeli law does not use the word **"פיקדון"** in the rental context — i
 the real app flow: real user queries carry richer context (contract clauses, documents) that
 covers the lexical gap, and the analysis/chat layer (Claude, P3/P5) bridges פיקדון↔ערובה by
 meaning. The pipeline is proven correct — the same retrieval surfaces §25י at #1 the moment the
-query uses the term the law actually uses. See `TODO.md` for the planned retrieval improvements
-(title-embed in P2, hybrid keyword+vector search in P3) that harden the lexical-gap case.
+query uses the term the law actually uses. See `TODO.md` for the retrieval work on the
+lexical-gap case.
+
+**P2 update — title-embed experiment failed (2026-07-09):** re-embedding as
+`section_title + "\n" + text` was tried and **reverted**. It pushed §25י out of Q1's top-5
+(חוק הערבות §2 took #1 at sim 0.536 on the word "ערבות") — the second failed attempt to close
+the lexical gap at embed time. Body-only remains the shipped state (§25י #1, sim 0.482). The
+fix is now scheduled for P3 (hybrid keyword+vector search). See `TODO.md`.

@@ -1,9 +1,13 @@
 # TODO — Retrieval Improvements Backlog
 
-## P2 (recommended, cheap win)
-- [ ] Embed `section_title + "\n" + text` (title only, NOT sign/chapter).
-      Prior test with title+sign+chapter caused Guarantee Law to dominate — avoid.
-      Best-practice RAG — title carries semantic signal. Cost: ~$0.005, ~30min code.
+## P2 — title-embed: TRIED, FAILED ❌ (2026-07-09)
+- [x] ~~Embed `section_title + "\n" + text` (title only).~~ **Regressed Q1 — reverted to body-only.**
+      On `"השבת ערבות בסיום שכירות"`, prepending the title pushed §25י **out of top-5**
+      entirely; חוק הערבות §2 took #1 (sim 0.536) purely on the word "ערבות"/"ערב".
+      Body-only keeps §25י at #1 (sim 0.482). This is the **second** failed metadata-augment
+      experiment (first: title+sign+chapter) — same root cause: text-embedding-3-small is
+      lexical, not semantic, on Hebrew, so any added surface tokens amplify word-match noise.
+      **Conclusion: the lexical gap cannot be closed at embed time. It moves to P3 (hybrid).**
 
 ## P3 (post-MVP, on real user feedback)
 - [ ] Hybrid search: vector + tsvector keyword (Postgres FTS or pg_trgm).
