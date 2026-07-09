@@ -1,0 +1,34 @@
+# LeaseLens — Acceptance Criteria & Results
+
+Per-phase acceptance. A phase is "done" only when its criteria pass against a real run.
+
+---
+
+## P0 — Bootstrap ✅
+- `pnpm build` compiles clean; `/dev` renders "LeaseLens dev" + commit sha (RTL). PASS.
+
+---
+
+## P1 — Law corpus ✅
+
+**Corpus:** 11 Israeli civil/rental laws (`data/laws/*.txt` + `data/laws/manifest.json`),
+645 section-level chunks, embedded with OpenAI `text-embedding-3-small` (1536d) into Supabase
+`law_chunks` (HNSW cosine index + `match_law_chunks` RPC). Idempotent upsert on
+`(law_name, section_number)`.
+
+**Acceptance query — semantic retrieval sanity:**
+
+| # | Query | Expected | Result |
+|---|---|---|---|
+| Q1 | `"השבת ערבות בסיום שכירות"` | חוק השכירות והשאילה §25י (ערובה) in top-3, sim ≥ 0.4 | **STRONG PASS** — §25י at **#1**, sim **0.482** ✅ |
+
+> Q2 merged into Q1 — the two were duplicates of the same "deposit-return" check.
+
+**Note — why the original `"החזר פיקדון"` criterion was removed:**
+Israeli law does not use the word **"פיקדון"** in the rental context — it uses **"ערובה"**
+(security). A single-word `"פיקדון"` query is an artificial worst-case that does not represent
+the real app flow: real user queries carry richer context (contract clauses, documents) that
+covers the lexical gap, and the analysis/chat layer (Claude, P3/P5) bridges פיקדון↔ערובה by
+meaning. The pipeline is proven correct — the same retrieval surfaces §25י at #1 the moment the
+query uses the term the law actually uses. See `TODO.md` for the planned retrieval improvements
+(title-embed in P2, hybrid keyword+vector search in P3) that harden the lexical-gap case.

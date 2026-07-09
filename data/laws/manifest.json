@@ -1,0 +1,96 @@
+{
+  "corpus": "israeli-civil-law-contracts",
+  "version": "1.0.0",
+  "language": "he",
+  "source": "he.wikisource.org",
+  "documents": {
+    "01-contracts-general.txt": {
+      "title": "חוק החוזים (חלק כללי)",
+      "short_title": "חוק החוזים כללי",
+      "year_hebrew": "התשל״ג",
+      "year": 1973,
+      "category": "חוזים",
+      "priority": "core"
+    },
+    "02-contracts-remedies.txt": {
+      "title": "חוק החוזים (תרופות בשל הפרת חוזה)",
+      "short_title": "חוק החוזים תרופות",
+      "year_hebrew": "התשל״א",
+      "year": 1970,
+      "category": "חוזים",
+      "priority": "core"
+    },
+    "03-sale.txt": {
+      "title": "חוק המכר",
+      "short_title": "חוק המכר",
+      "year_hebrew": "התשכ״ח",
+      "year": 1968,
+      "category": "עסקאות",
+      "priority": "core"
+    },
+    "04-bailees.txt": {
+      "title": "חוק השומרים",
+      "short_title": "חוק השומרים",
+      "year_hebrew": "התשכ״ז",
+      "year": 1967,
+      "category": "חיובים",
+      "priority": "core"
+    },
+    "05-land.txt": {
+      "title": "חוק המקרקעין",
+      "short_title": "חוק המקרקעין",
+      "year_hebrew": "התשכ״ט",
+      "year": 1969,
+      "category": "מקרקעין",
+      "priority": "core"
+    },
+    "06-standard-contracts.txt": {
+      "title": "חוק החוזים האחידים",
+      "short_title": "חוק החוזים האחידים",
+      "year_hebrew": "התשמ״ג",
+      "year": 1982,
+      "category": "חוזים",
+      "priority": "high"
+    },
+    "07-tenant-protection.txt": {
+      "title": "חוק הגנת הדייר [נוסח משולב]",
+      "short_title": "חוק הגנת הדייר",
+      "year_hebrew": "התשל״ב",
+      "year": 1972,
+      "category": "שכירות",
+      "priority": "high"
+    },
+    "08-unjust-enrichment.txt": {
+      "title": "חוק עשיית עושר ולא במשפט",
+      "short_title": "חוק עשיית עושר",
+      "year_hebrew": "התשל״ט",
+      "year": 1979,
+      "category": "חיובים",
+      "priority": "secondary"
+    },
+    "09-guarantee.txt": {
+      "title": "חוק הערבות",
+      "short_title": "חוק הערבות",
+      "year_hebrew": "התשכ״ז",
+      "year": 1967,
+      "category": "חיובים",
+      "priority": "secondary"
+    },
+    "10-limitations.txt": {
+      "title": "חוק ההתיישנות",
+      "short_title": "חוק ההתיישנות",
+      "year_hebrew": "התשי״ח",
+      "year": 1958,
+      "category": "פרוצדורה",
+      "priority": "secondary"
+    },
+    "rental-law-fixed.txt": {
+      "title": "חוק השכירות והשאילה",
+      "short_title": "חוק השכירות",
+      "year_hebrew": "התשל״א",
+      "year": 1971,
+      "category": "שכירות",
+      "priority": "core"
+    }
+  }
+}

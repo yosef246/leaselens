@@ -9,7 +9,11 @@
     "prebuild": "node scripts/gen-version.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "embed-laws": "node scripts/embed-laws.ts",
+    "embed-laws:dry": "node scripts/embed-laws.ts --dry-run",
+    "query-laws": "node scripts/query-laws.ts",
+    "scrape-laws": "node scripts/scrape-laws.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",

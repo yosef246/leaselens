@@ -115,3 +115,30 @@ Approved as a P7 note (not blocking now). Two hard requirements for P7:
 1. **Real p95 measurement** of analysis time on a ~20-page contract — measured, not theoretical.
 2. **Clear mid-chunk failure fallback** — if a chunk fails partway through analysis, the user must
    NOT be left with a silent partial analysis; show an explicit notice/error state.
+
+---
+
+## D1 — AMENDED (corpus expanded 4 → 11 laws, manifest-driven)
+
+The owner rebuilt and expanded the P1 corpus. **This amendment supersedes the D1 table above.**
+
+- **Source of truth:** `data/laws/*.txt` (11 files) + **`data/laws/manifest.json`** (note: manifest lives
+  inside `data/laws/`, not `data/`). `rental-fair.txt` (חוק שכירות הוגנת) was REMOVED; the corpus now
+  uses `rental-law-fixed.txt` (חוק השכירות והשאילה, התשל״א-1971).
+- **The 11 laws** (see manifest for full metadata — `title`, `short_title`, `year`, `year_hebrew`,
+  `category`, `priority`): 01-contracts-general, 02-contracts-remedies, 03-sale, 04-bailees, 05-land,
+  06-standard-contracts, 07-tenant-protection, 08-unjust-enrichment, 09-guarantee, 10-limitations,
+  rental-law-fixed.
+- **`embed-laws` MUST iterate the manifest, NOT a directory glob.** Only manifest-listed files are
+  embedded; every chunk's metadata (law title/short_title/year/category/priority + is_binding) comes
+  from the manifest. A `.txt` on disk that isn't in the manifest is ignored (and should not exist).
+- **File format:** title line (`שם החוק, שנה עברית–שנה`) → optional `פרק X: ...` / `סימן X: ...`
+  headers → section `^\d+[א-ת]?\. <כותרת> [תיקון: ...]` → sub-clauses `(א)`, `(ב)`, ... each on its
+  own line followed by text.
+- **Chunking:** by section (regex `^\d+[א-ת]?\.`). Fold a section's sub-clauses into its chunk text.
+  Carry the enclosing `פרק` (chapter) and `סימן` (sign) as chunk **metadata** (context), plus any
+  `[תיקון: ...]` amendment marker. `is_binding = true` for all 11 (enacted statutes); `category` from
+  the manifest (D6 mapping reads the manifest).
+- **D3 fixture remap (for QA):** the "שכירות הוגנת" citation maps to the fair-rental provisions that
+  live as sections **~25א–25כד inside `rental-law-fixed.txt`** (חוק השכירות והשאילה) — that 2017
+  amendment was inserted into the שכירות והשאילה law. Apply this remap at the QA stage.
