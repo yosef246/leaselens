@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ContractRow, ContractStatus } from "@/lib/db/contracts";
+import { AskPanel } from "@/components/ask-panel";
 
 const STATUS_LABEL: Record<ContractStatus, string> = {
   uploaded: "הועלה",
@@ -23,6 +24,7 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [openAsk, setOpenAsk] = useState<Record<string, boolean>>({});
 
   const anyTransient = useMemo(
     () =>
@@ -107,6 +109,19 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
               </div>
             </div>
             {errors[c.id] && <p className="text-xs text-red-600">{errors[c.id]}</p>}
+
+            {c.status === "embedded" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOpenAsk((o) => ({ ...o, [c.id]: !o[c.id] }))}
+                  className="self-start text-xs font-medium text-stone-600 underline underline-offset-2 hover:text-stone-900"
+                >
+                  {openAsk[c.id] ? "סגור שאלה" : "שאל שאלה על החוזה"}
+                </button>
+                {openAsk[c.id] && <AskPanel contractId={c.id} />}
+              </>
+            )}
           </li>
         );
       })}

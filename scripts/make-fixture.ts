@@ -44,13 +44,21 @@ const LINES: string[] = [
  * RTL line ("10" → "01"). Since we draw in logical order, we pre-reverse each digit run here so
  * the EXTRACTED text reads correctly. (Fixture-only cosmetic; real RTL PDFs carry proper BiDi.)
  */
+const reverseDigitsOnly = (s: string) => s.replace(/\d+/g, (r) => [...r].reverse().join(""));
+const reverseNumberRuns = (s: string) =>
+  s.replace(/[0-9][0-9.,:/-]*/g, (r) => [...r].reverse().join(""));
+
 function preReverseNumberRuns(line: string): string {
-  // Keep the leading section marker (e.g. "10. ") untouched — it must survive as-is so the
-  // chunker's ^number regex still matches after extraction. Only reverse in-body number runs.
+  // pdf-parse's BiDi reverses number runs on extraction. Counter it so extracted text reads right:
+  //  - leading section marker ("12. "): reverse ONLY its digits (keep the ".") — pdf-parse flips
+  //    just the digits back to "12." so the chunker's ^number regex still matches.
+  //  - in-body numbers ("5,000", "01.08.2026"): reverse the whole run incl. separators, since
+  //    pdf-parse reverses those as a unit.
   const marker = line.match(/^(\s*\d+[א-ת]?\.?\s+)/);
-  const prefix = marker ? marker[1] : "";
-  const rest = line.slice(prefix.length);
-  return prefix + rest.replace(/[0-9][0-9.,:/-]*/g, (run) => [...run].reverse().join(""));
+  if (marker) {
+    return reverseDigitsOnly(marker[1]) + reverseNumberRuns(line.slice(marker[1].length));
+  }
+  return reverseNumberRuns(line);
 }
 
 function findFont(): string {

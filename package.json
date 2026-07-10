@@ -15,9 +15,11 @@
     "query-laws": "node scripts/query-laws.ts",
     "scrape-laws": "node scripts/scrape-laws.ts",
     "make-fixture": "node scripts/make-fixture.ts",
-    "process:sample": "node scripts/process-sample.ts"
+    "process:sample": "node scripts/process-sample.ts",
+    "ask:sample": "node scripts/ask-sample.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.10",
     "@anthropic-ai/sdk": "^0.110.0",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
