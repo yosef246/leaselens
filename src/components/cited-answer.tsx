@@ -19,14 +19,18 @@ function isLawMarker(marker: string) {
 export interface CitedAnswerProps {
   answer: string;
   sources: RagSource[];
-  onCiteClick?: (marker: string) => void;
+  onSourceClick?: (source: RagSource) => void;
   debug?: boolean;
   className?: string;
 }
 
-export function CitedAnswer({ answer, sources, onCiteClick, debug, className }: CitedAnswerProps) {
+export function CitedAnswer({ answer, sources, onSourceClick, debug, className }: CitedAnswerProps) {
   const lawSources = sources.filter((s) => s.type === "law");
   const contractSources = sources.filter((s) => s.type === "contract");
+  const clickSource = (marker: string) => {
+    const src = sources.find((s) => s.marker === marker);
+    if (src) onSourceClick?.(src);
+  };
 
   const parts = answer.split(CITE_OR_BOLD).filter(Boolean);
 
@@ -49,13 +53,13 @@ export function CitedAnswer({ answer, sources, onCiteClick, debug, className }: 
               <button
                 key={i}
                 type="button"
-                onClick={() => onCiteClick?.(marker)}
+                onClick={() => clickSource(marker)}
                 className={cn(
                   "mx-0.5 inline-flex items-center rounded px-1 font-mono text-xs font-semibold align-baseline transition-colors",
                   law
                     ? "bg-chart-2/15 text-chart-2 hover:bg-chart-2/25"
                     : "bg-primary/15 text-primary hover:bg-primary/25",
-                  !onCiteClick && "cursor-default"
+                  !onSourceClick && "cursor-default"
                 )}
               >
                 {part}
@@ -76,7 +80,7 @@ export function CitedAnswer({ answer, sources, onCiteClick, debug, className }: 
                 <li key={`${s.type}-${s.marker}`}>
                   <button
                     type="button"
-                    onClick={() => onCiteClick?.(s.marker)}
+                    onClick={() => onSourceClick?.(s)}
                     className="flex w-full items-start gap-2 text-right text-xs hover:opacity-80"
                   >
                     <span

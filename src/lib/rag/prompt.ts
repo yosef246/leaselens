@@ -8,7 +8,7 @@
  * (hallucinated citations being the #1 RAG failure mode).
  *
  * The verbatim D2 disclaimer is intentionally NOT produced by the model — the UI renders it
- * word-for-word (see AskPanel) so the legally-mandated wording can never be paraphrased.
+ * word-for-word (results view / demo) so the legally-mandated wording can never be paraphrased.
  */
 
 /** Retrieval quality gates (owner decision). */

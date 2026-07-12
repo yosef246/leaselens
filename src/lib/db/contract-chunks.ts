@@ -53,6 +53,29 @@ export async function insertContractChunks(
   return inserted;
 }
 
+export interface ContractChunkRow {
+  id: string;
+  section_number: string | null;
+  chunk_index: number;
+  text: string;
+}
+
+/** The contract's chunks in reading order (for the results-view source panel). RLS-scoped. */
+export async function listContractChunks(
+  userId: string,
+  contractId: string
+): Promise<ContractChunkRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contract_chunks")
+    .select("id,section_number,chunk_index,text")
+    .eq("contract_id", contractId)
+    .order("chunk_index", { ascending: true });
+  if (error) throw new Error(`listContractChunks failed: ${error.message}`);
+  void userId;
+  return (data ?? []) as ContractChunkRow[];
+}
+
 export async function countChunksForContract(
   userId: string,
   contractId: string
