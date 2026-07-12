@@ -1,46 +1,52 @@
 "use client";
 
 /**
- * Contracts list with a Process action + live status. The /process endpoint is synchronous
- * but persists each status transition; while any contract is transient we poll via
- * router.refresh() so parsing → parsed → embedded shows up without a manual reload.
+ * Contracts grid with a Process action + live status. The /process endpoint persists each
+ * status transition; while anything is transient we poll via router.refresh(). Embedded
+ * contracts link to the results view (/contracts/[id]).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FileText, Loader2, MessageSquareText, FileQuestion } from "lucide-react";
+import { toast } from "sonner";
 import type { ContractRow, ContractStatus } from "@/lib/db/contracts";
-import { AskPanel } from "@/components/ask-panel";
-
-const STATUS_LABEL: Record<ContractStatus, string> = {
-  uploaded: "הועלה",
-  parsing: "מפרסר…",
-  parsed: "פורסר",
-  embedded: "מוטמע ✓",
-  failed: "נכשל",
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const TRANSIENT: ContractStatus[] = ["parsing", "parsed"];
+
+const STATUS: Record<ContractStatus, { label: string; className: string }> = {
+  uploaded: { label: "הועלה", className: "bg-secondary text-secondary-foreground" },
+  parsing: { label: "מעבד…", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  parsed: { label: "מעבד…", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  embedded: { label: "מוכן ✓", className: "bg-primary/15 text-primary" },
+  failed: { label: "נכשל", className: "bg-destructive/15 text-destructive" },
+};
+
+const fmtDate = (iso: string) =>
+  new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "short", year: "numeric" }).format(
+    new Date(iso)
+  );
 
 export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Record<string, boolean>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [openAsk, setOpenAsk] = useState<Record<string, boolean>>({});
 
   const anyTransient = useMemo(
     () =>
-      contracts.some((c) => TRANSIENT.includes(c.status)) ||
-      Object.values(busy).some(Boolean),
+      contracts.some((c) => TRANSIENT.includes(c.status)) || Object.values(busy).some(Boolean),
     [contracts, busy]
   );
 
-  // Poll while something is in flight.
   useEffect(() => {
     if (!anyTransient) return;
     const t = setTimeout(() => router.refresh(), 1500);
     return () => clearTimeout(t);
   }, [anyTransient, contracts, router]);
 
-  // Clear the local busy flag once the server reports a terminal status.
   useEffect(() => {
     setBusy((prev) => {
       let changed = false;
@@ -58,19 +64,14 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   const process = useCallback(
     async (id: string) => {
       setBusy((b) => ({ ...b, [id]: true }));
-      setErrors((e) => {
-        const next = { ...e };
-        delete next[id];
-        return next;
-      });
       try {
         const res = await fetch(`/api/contracts/${id}/process`, { method: "POST" });
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
-          setErrors((e) => ({ ...e, [id]: data.error ?? "העיבוד נכשל" }));
+          toast.error(data.error ?? "העיבוד נכשל");
         }
       } catch {
-        setErrors((e) => ({ ...e, [id]: "העיבוד נכשל — נסה שוב" }));
+        toast.error("העיבוד נכשל — נסה שוב");
       } finally {
         router.refresh();
       }
@@ -79,52 +80,67 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   );
 
   if (contracts.length === 0) {
-    return <p className="text-sm text-stone-500">עדיין לא הועלו חוזים.</p>;
+    return (
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
+          <FileQuestion className="h-10 w-10 text-muted-foreground" />
+          <p className="font-medium">עדיין לא הועלו חוזים</p>
+          <p className="text-sm text-muted-foreground">העלה חוזה למעלה כדי להתחיל בניתוח.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {contracts.map((c) => {
         const isBusy = busy[c.id] || TRANSIENT.includes(c.status);
         const canProcess = !isBusy && (c.status === "uploaded" || c.status === "failed");
+        const status = STATUS[c.status];
         return (
-          <li key={c.id} className="flex flex-col gap-1 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="truncate font-medium text-stone-900">{c.title}</span>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
-                  {isBusy && !TRANSIENT.includes(c.status)
-                    ? "מעבד…"
-                    : STATUS_LABEL[c.status] ?? c.status}
-                </span>
-                {canProcess && (
-                  <button
-                    type="button"
+          <Card key={c.id} className="flex flex-col">
+            <CardContent className="flex flex-1 flex-col gap-3 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <span className="truncate font-medium">{c.title}</span>
+                </div>
+                <Badge className={cn("shrink-0 border-transparent", status.className)}>
+                  {isBusy && !TRANSIENT.includes(c.status) ? "מעבד…" : status.label}
+                </Badge>
+              </div>
+
+              <p className="text-xs text-muted-foreground">הועלה {fmtDate(c.created_at)}</p>
+
+              <div className="mt-auto pt-2">
+                {c.status === "embedded" ? (
+                  <Button asChild size="sm" className="w-full">
+                    <Link href={`/contracts/${c.id}`}>
+                      <MessageSquareText className="h-4 w-4" />
+                      שאל שאלה
+                    </Link>
+                  </Button>
+                ) : isBusy ? (
+                  <Button size="sm" variant="secondary" className="w-full" disabled>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    מעבד…
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant={c.status === "failed" ? "outline" : "default"}
+                    className="w-full"
                     onClick={() => process(c.id)}
-                    className="rounded-md border border-stone-300 px-2.5 py-1 text-xs font-medium text-stone-900 hover:bg-stone-100"
+                    disabled={!canProcess}
                   >
                     {c.status === "failed" ? "עבד מחדש" : "עבד"}
-                  </button>
+                  </Button>
                 )}
               </div>
-            </div>
-            {errors[c.id] && <p className="text-xs text-red-600">{errors[c.id]}</p>}
-
-            {c.status === "embedded" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setOpenAsk((o) => ({ ...o, [c.id]: !o[c.id] }))}
-                  className="self-start text-xs font-medium text-stone-600 underline underline-offset-2 hover:text-stone-900"
-                >
-                  {openAsk[c.id] ? "סגור שאלה" : "שאל שאלה על החוזה"}
-                </button>
-                {openAsk[c.id] && <AskPanel contractId={c.id} />}
-              </>
-            )}
-          </li>
+            </CardContent>
+          </Card>
         );
       })}
-    </ul>
+    </div>
   );
 }
