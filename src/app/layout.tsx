@@ -1,23 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Assistant } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
-// NOTE (P0): scaffold fonts kept for bootstrap. The design system's Hebrew-first
-// typography (IBM Plex Sans Hebrew + IBM Plex Sans + IBM Plex Mono) is wired in P4
-// per docs/DESIGN_SYSTEM.md.
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+// Hebrew-first variable font (also covers Latin), wired as the default sans via globals.css.
+const assistant = Assistant({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-assistant",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "LeaseLens",
-  description: "ניתוח חוזי שכירות בעברית מול החוק הישראלי",
+  title: "LeaseLens — ניתוח חוזי שכירות מול החוק הישראלי",
+  description:
+    "העלה חוזה שכירות וקבל ניתוח משפטי מבוסס-ציטוטים מהחוק הישראלי — בעברית, בשניות.",
+  icons: { icon: "/favicon.svg" },
+  openGraph: {
+    title: "LeaseLens — ניתוח חוזי שכירות מול החוק הישראלי",
+    description:
+      "ניתוח RAG של חוזי שכירות מול חוק השכירות, החוזים האחידים והמקרקעין — עם ציטוטים מדויקים.",
+    locale: "he_IL",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -26,11 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="he" dir="rtl" suppressHydrationWarning>
+      <body className={`${assistant.variable} font-sans antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          {children}
+          <Toaster richColors position="top-center" dir="rtl" />
+        </ThemeProvider>
       </body>
     </html>
   );
