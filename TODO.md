@@ -18,8 +18,10 @@
 ## P3 (post-MVP, on real user feedback)
 - [ ] Consider a re-ranker (bge-reranker-v2-m3 or Cohere Rerank) once we see real user
       failure cases in retrieval quality. MVP uses cosine + top-K only (no re-rank).
-- [ ] Hybrid search: vector + tsvector keyword (Postgres FTS or pg_trgm).
-      Bridges lexical gaps like פיקדון↔ערבות at query time without re-embedding.
+- [x] Hybrid search: vector + tsvector keyword — DONE (migration 0007, RRF fusion).
+      Closes the §25י gap: keyword arm surfaces dense sections vector dilution buries.
+      Query expansion (src/lib/rag/query.ts) strips ה-prefix + OR-expands synonyms
+      (פיקדון↔ערובה). Re-embedding NOT required.
 - [ ] Consider text-embedding-3-large (3072d).
       Requires schema migration (vector(1536) → vector(3072)) + full re-embed.
       Only if hybrid + title-embed still leave measurable gaps.

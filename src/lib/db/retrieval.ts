@@ -19,6 +19,8 @@ export interface LawHitRow {
   is_binding: boolean;
   text: string;
   similarity: number;
+  keyword_matched?: boolean;
+  rrf_score?: number;
 }
 
 export interface ContractHitRow {
@@ -28,6 +30,8 @@ export interface ContractHitRow {
   chunk_index: number;
   text: string;
   similarity: number;
+  keyword_matched?: boolean;
+  rrf_score?: number;
 }
 
 export async function matchLawChunks(
@@ -56,6 +60,42 @@ export async function matchContractChunks(
     p_match_count: matchCount,
   });
   if (error) throw new Error(`matchContractChunks failed: ${error.message}`);
+  void userId; // ownership enforced by RLS (INVOKER); kept for the D4 signature.
+  return (data ?? []) as ContractHitRow[];
+}
+
+// ---- Hybrid (vector + keyword RRF, migration 0007) — the retrieval used by /ask ----
+
+export async function matchLawChunksHybrid(
+  queryEmbedding: number[],
+  queryText: string,
+  matchCount: number
+): Promise<LawHitRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("match_law_chunks_hybrid", {
+    p_query_embedding: queryEmbedding,
+    p_query_text: queryText,
+    p_match_count: matchCount,
+  });
+  if (error) throw new Error(`matchLawChunksHybrid failed: ${error.message}`);
+  return (data ?? []) as LawHitRow[];
+}
+
+export async function matchContractChunksHybrid(
+  userId: string,
+  contractId: string,
+  queryEmbedding: number[],
+  queryText: string,
+  matchCount: number
+): Promise<ContractHitRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("match_contract_chunks_hybrid", {
+    p_query_embedding: queryEmbedding,
+    p_query_text: queryText,
+    p_contract_id: contractId,
+    p_match_count: matchCount,
+  });
+  if (error) throw new Error(`matchContractChunksHybrid failed: ${error.message}`);
   void userId; // ownership enforced by RLS (INVOKER); kept for the D4 signature.
   return (data ?? []) as ContractHitRow[];
 }

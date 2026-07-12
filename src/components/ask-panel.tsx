@@ -69,6 +69,8 @@ export function AskPanel({ contractId }: { contractId: string }) {
 
   const lawSources = sources.filter((s) => s.type === "law");
   const contractSources = sources.filter((s) => s.type === "contract");
+  // Only a BARE grounded-empty answer gets the friendly note. If the model added a cited
+  // explanation after the phrase, that's useful — render the full answer instead of hiding it.
   const isEmptyAnswer = answer.trim() === GROUNDED_EMPTY;
 
   return (

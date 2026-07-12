@@ -15,8 +15,9 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import { getContract } from "@/lib/db/contracts";
-import { matchLawChunks, matchContractChunks } from "@/lib/db/retrieval";
+import { matchLawChunksHybrid, matchContractChunksHybrid } from "@/lib/db/retrieval";
 import { embedText } from "@/lib/embeddings/openai";
+import { buildKeywordQuery } from "@/lib/rag/query";
 import {
   buildRagPrompt,
   MIN_SIMILARITY,
@@ -75,26 +76,30 @@ export async function POST(
   }
   const { question } = parsed.data;
 
-  // ---- Retrieval ----
+  // ---- Retrieval (hybrid: vector + keyword RRF) ----
   let lawItems: LawContextItem[];
   let contractItems: ContractContextItem[];
   try {
     const queryEmbedding = await embedText(question);
+    const keywordQuery = buildKeywordQuery(question);
     const [lawHits, contractHits] = await Promise.all([
-      matchLawChunks(queryEmbedding, TOP_K),
-      matchContractChunks(user.id, id, queryEmbedding, TOP_K),
+      matchLawChunksHybrid(queryEmbedding, keywordQuery, TOP_K),
+      matchContractChunksHybrid(user.id, id, queryEmbedding, keywordQuery, TOP_K),
     ]);
 
-    lawItems = lawHits
-      .filter((h) => h.similarity >= MIN_SIMILARITY)
-      .map((h) => ({
-        short_title: h.short_title,
-        section_number: h.section_number,
-        text: h.text,
-        similarity: h.similarity,
-      }));
+    // A hit is relevant if it's a strong vector match OR the keyword arm matched it
+    // (keyword catches dense sections that vector dilution buries, e.g. חוק השכירות §25י).
+    const relevant = (h: { similarity: number; keyword_matched?: boolean }) =>
+      h.similarity >= MIN_SIMILARITY || h.keyword_matched === true;
 
-    const strongContract = contractHits.filter((h) => h.similarity >= MIN_SIMILARITY);
+    lawItems = lawHits.filter(relevant).map((h) => ({
+      short_title: h.short_title,
+      section_number: h.section_number,
+      text: h.text,
+      similarity: h.similarity,
+    }));
+
+    const strongContract = contractHits.filter(relevant);
     if (strongContract.length < CONTRACT_MIN_HITS) {
       // Weak contract retrieval → law-only, per owner decision. Log for pattern analysis.
       console.warn(
