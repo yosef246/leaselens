@@ -120,7 +120,7 @@ export async function POST(
     model: anthropic(MODEL),
     system,
     prompt,
-    temperature: 0.2,
+    // claude-sonnet-5 does not support `temperature` (AI SDK warns + ignores it).
     maxOutputTokens: 1024,
   });
 

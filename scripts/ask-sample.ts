@@ -100,7 +100,7 @@ async function main(): Promise<void> {
     model: anthropic("claude-sonnet-5"),
     system,
     prompt,
-    temperature: 0.2,
+    // claude-sonnet-5 does not support `temperature` (AI SDK warns + ignores it).
     maxOutputTokens: 1024,
   });
 
