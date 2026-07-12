@@ -97,6 +97,7 @@ export async function POST(
       section_number: h.section_number,
       text: h.text,
       similarity: h.similarity,
+      keyword_matched: h.keyword_matched,
     }));
 
     const strongContract = contractHits.filter(relevant);
@@ -112,6 +113,7 @@ export async function POST(
         section_number: h.section_number,
         text: h.text,
         similarity: h.similarity,
+        keyword_matched: h.keyword_matched,
       }));
     }
   } catch (err) {

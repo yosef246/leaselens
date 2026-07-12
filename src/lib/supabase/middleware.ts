@@ -11,8 +11,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Path prefixes reachable without a session. */
-const PUBLIC_PREFIXES = ["/sign-in", "/auth"];
+/** Path prefixes reachable without a session (marketing + auth surface). */
+const PUBLIC_PREFIXES = ["/sign-in", "/auth", "/demo"];
+/** Exact public paths (the landing page — "/" as a prefix would match everything). */
+const PUBLIC_EXACT = new Set(["/"]);
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request });
@@ -41,7 +43,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+  const isPublic =
+    PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

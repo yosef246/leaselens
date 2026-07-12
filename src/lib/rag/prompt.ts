@@ -31,12 +31,14 @@ export interface LawContextItem {
   section_number: string;
   text: string;
   similarity: number;
+  keyword_matched?: boolean;
 }
 
 export interface ContractContextItem {
   section_number: string | null;
   text: string;
   similarity: number;
+  keyword_matched?: boolean;
 }
 
 export interface RagSource {
@@ -46,6 +48,7 @@ export interface RagSource {
   section_number: string | null;
   snippet: string;
   similarity: number;
+  keyword_matched?: boolean;
 }
 
 export interface RagPrompt {
@@ -85,6 +88,7 @@ export function buildRagPrompt(
       section_number: item.section_number,
       snippet: snippet(item.text),
       similarity: item.similarity,
+      keyword_matched: item.keyword_matched,
     });
     return `[${marker}] ${item.short_title} §${item.section_number}: ${item.text}`;
   });
@@ -99,6 +103,7 @@ export function buildRagPrompt(
       section_number: item.section_number,
       snippet: snippet(item.text),
       similarity: item.similarity,
+      keyword_matched: item.keyword_matched,
     });
     return `[${marker}] ${label}: ${item.text}`;
   });
