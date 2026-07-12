@@ -134,15 +134,18 @@ async function main(): Promise<void> {
   const { generateText } = await import("ai");
   const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const { text: answer } = await generateText({
+  const { text: answer, finishReason, usage } = await generateText({
     model: anthropic("claude-sonnet-5"),
     system,
     prompt,
     // claude-sonnet-5 does not support `temperature` (AI SDK warns + ignores it).
-    maxOutputTokens: 1024,
+    maxOutputTokens: 2048,
   });
 
-  console.log("\n[ask:sample] Claude answer:\n");
+  console.log(
+    `\n[ask:sample] finishReason=${finishReason} outputTokens=${usage?.outputTokens ?? "?"} (maxOutputTokens=2048)`
+  );
+  console.log("[ask:sample] Claude answer:\n");
   console.log(answer);
 }
 
