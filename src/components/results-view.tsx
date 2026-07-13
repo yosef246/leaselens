@@ -138,7 +138,7 @@ export function ResultsView({
   );
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[1.15fr_0.85fr]">
+    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.15fr_0.85fr]">
       {/* Right (in RTL, first): Q&A */}
       <section className="flex flex-col gap-4">
         <div>
@@ -172,7 +172,7 @@ export function ResultsView({
             rows={2}
             className="w-full resize-y rounded-lg border border-input bg-background p-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           />
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1.5">
               {SUGGESTED.map((s) => (
                 <button
@@ -180,13 +180,17 @@ export function ResultsView({
                   type="button"
                   onClick={() => ask(s)}
                   disabled={pending}
-                  className="rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs text-secondary-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-50"
+                  className="rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-xs text-secondary-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 disabled:opacity-50"
                 >
                   {s}
                 </button>
               ))}
             </div>
-            <Button type="submit" disabled={pending || question.trim().length < 3}>
+            <Button
+              type="submit"
+              disabled={pending || question.trim().length < 3}
+              className="w-full sm:w-auto"
+            >
               <Send className="h-4 w-4" />
               שאל
             </Button>
@@ -217,8 +221,9 @@ export function ResultsView({
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{D2_DISCLAIMER}</p>
       </section>
 
-      {/* Left (in RTL, second): the contract text */}
-      <aside className="lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
+      {/* Left (in RTL, second): the contract text. Bounded scroll box on mobile,
+          sticky full-height column on desktop. */}
+      <aside className="h-[55vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
         <div className="flex h-full flex-col rounded-xl border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold">טקסט החוזה</h2>

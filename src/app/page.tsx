@@ -84,7 +84,7 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-2 md:py-24">
+        <section className="mx-auto grid max-w-6xl items-center gap-12 overflow-hidden px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
           <div className="text-center md:text-right">
             <Badge variant="secondary" className="mb-4">
               מבוסס RAG · חוק ישראלי · עברית
@@ -97,10 +97,10 @@ export default async function LandingPage() {
               העלה חוזה, וקבל ניתוח משפטי מבוסס-ציטוטים מהחוק — בעברית.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/demo">נסה עם חוזה דוגמה</Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
                 <Link href={authed ? "/dashboard" : "/sign-in"}>
                   {authed ? "לדשבורד" : "התחבר"}
                 </Link>
@@ -111,7 +111,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Features */}
-        <section className="mx-auto max-w-6xl px-6 py-12">
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="grid gap-5 sm:grid-cols-3">
             {FEATURES.map((f) => (
               <Card key={f.title} className="h-full">
@@ -128,7 +128,7 @@ export default async function LandingPage() {
         </section>
 
         {/* How it works */}
-        <section className="mx-auto max-w-6xl px-6 py-12">
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <h2 className="mb-10 text-center text-2xl font-bold tracking-tight">איך זה עובד</h2>
           <div className="grid gap-8 sm:grid-cols-3">
             {STEPS.map((s, i) => (

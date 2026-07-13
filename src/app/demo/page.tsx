@@ -17,7 +17,7 @@ export default async function DemoPage() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader authed={!!user} />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <Badge variant="secondary" className="mb-2">
