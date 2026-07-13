@@ -170,7 +170,7 @@ export function ResultsView({
             }}
             placeholder="שאל על הפיקדון, על ביטול חוזה, על תיקונים…"
             rows={2}
-            className="w-full resize-y rounded-lg border border-input bg-background p-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="w-full resize-y rounded-lg border border-input bg-background p-3 text-base shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:text-sm"
           />
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-1.5">
@@ -221,9 +221,9 @@ export function ResultsView({
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{D2_DISCLAIMER}</p>
       </section>
 
-      {/* Left (in RTL, second): the contract text. Bounded scroll box on mobile,
-          sticky full-height column on desktop. */}
-      <aside className="h-[55dvh] lg:sticky lg:top-20 lg:h-[calc(100dvh-6rem)]">
+      {/* Left (in RTL, second): the contract text. Flows naturally on mobile (no nested
+          scroll trap); sticky bounded-scroll column on desktop. */}
+      <aside className="lg:sticky lg:top-20 lg:h-[calc(100dvh-6rem)]">
         <div className="flex h-full flex-col rounded-xl border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold">טקסט החוזה</h2>

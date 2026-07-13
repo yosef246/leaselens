@@ -65,7 +65,8 @@ export default function SignInPage() {
             theme: ThemeSupa,
             // Explicit dark inputs so typed text is always readable (was black-on-dark).
             style: {
-              input: { color: "#ffffff", backgroundColor: "#1c1917" },
+              // fontSize 16px stops iOS Safari from zooming in on focus.
+              input: { color: "#ffffff", backgroundColor: "#1c1917", fontSize: "16px" },
               label: { color: "#44403c" },
             },
             variables: {

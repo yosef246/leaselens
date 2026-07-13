@@ -84,12 +84,12 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 overflow-hidden px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
+        <section className="mx-auto grid max-w-6xl items-center gap-8 overflow-hidden px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 md:grid-cols-2 md:py-24">
           <div className="text-center md:text-right">
             <Badge variant="secondary" className="mb-4">
               מבוסס RAG · חוק ישראלי · עברית
             </Badge>
-            <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl">
               נתח חוזי שכירות מול החוק הישראלי —{" "}
               <span className="text-primary">ב-30 שניות</span>
             </h1>
