@@ -223,7 +223,7 @@ export function ResultsView({
 
       {/* Left (in RTL, second): the contract text. Bounded scroll box on mobile,
           sticky full-height column on desktop. */}
-      <aside className="h-[55vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
+      <aside className="h-[55dvh] lg:sticky lg:top-20 lg:h-[calc(100dvh-6rem)]">
         <div className="flex h-full flex-col rounded-xl border border-border bg-card">
           <div className="border-b border-border px-4 py-3">
             <h2 className="text-sm font-semibold">טקסט החוזה</h2>

@@ -24,7 +24,7 @@ export default async function ContractResultsPage({
   const chunks = await listContractChunks(user.id, id);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <DashboardHeader email={user.email} />
       <ResultsView
         contractId={id}

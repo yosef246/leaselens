@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div
       dir="rtl"
-      className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center"
+      className="flex min-h-dvh flex-col items-center justify-center gap-4 p-8 text-center"
     >
       <div className="text-6xl" aria-hidden>
         🔍📄

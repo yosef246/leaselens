@@ -79,7 +79,7 @@ export default async function LandingPage() {
   const authed = !!user;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader authed={authed} />
 
       <main className="flex-1">

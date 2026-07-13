@@ -14,7 +14,7 @@ export default async function DemoPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader authed={!!user} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
