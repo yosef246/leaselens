@@ -33,12 +33,19 @@ interface RawSection {
 
 /** Normalize line endings and strip trailing spaces; keep newlines (section detection needs them). */
 function normalize(raw: string): string {
-  return raw
+  const cleaned = raw
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((line) => line.replace(/[ \t]+$/g, ""))
     .join("\n")
     .trim();
+
+  // Extraction-agnostic section detection: put every numbered marker ("7. ", "13. ") at the
+  // start of a line, whether the PDF extractor preserved line breaks (pdf-parse) or flowed the
+  // text together (unpdf/pdfjs on serverless). Only a digit+dot FOLLOWED BY whitespace and
+  // PRECEDED BY inline whitespace is treated as a marker — dates (01.08.2026) and amounts
+  // (5,000) don't have a dot-then-space, so they're left alone.
+  return cleaned.replace(/[ \t]+(\d{1,2}[א-ת]?\.[ \t])/g, "\n$1");
 }
 
 /** Sliding fixed-size window over a single string. */

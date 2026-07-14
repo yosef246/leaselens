@@ -1,11 +1,13 @@
 /**
- * Server-side PDF text extraction (pdf-parse v2 → pdfjs). Text layer only, no OCR.
+ * Server-side PDF text extraction via unpdf (a serverless-friendly pdfjs build). Text layer
+ * only, no OCR. We use unpdf instead of pdf-parse because pdf-parse's pdfjs path needs browser
+ * globals (DOMMatrix) that don't exist on Vercel serverless — unpdf ships the polyfilled build.
  *
- * Scanned-PDF guard: an image-only (scanned) PDF has no text layer, so pdf-parse returns
+ * Scanned-PDF guard: an image-only (scanned) PDF has no text layer, so extraction returns
  * ~nothing. We flag it when a non-trivially-sized file yields almost no text, and the caller
  * surfaces a clear Hebrew error. OCR is deferred (see TODO.md [P3+]).
  */
-import { PDFParse } from "pdf-parse";
+import { extractText, getDocumentProxy } from "unpdf";
 
 /** Below this many extracted chars, for a file larger than SCANNED_MIN_BYTES, we treat it as scanned. */
 const SCANNED_MIN_TEXT_CHARS = 100;
@@ -17,13 +19,11 @@ export interface ExtractResult {
 }
 
 export async function extractPdfText(data: Uint8Array): Promise<ExtractResult> {
-  const parser = new PDFParse({ data });
-  try {
-    const result = await parser.getText();
-    return { text: result.text ?? "", pages: result.total ?? 0 };
-  } finally {
-    await parser.destroy();
-  }
+  // getDocumentProxy takes ownership of the buffer; pass a copy so callers can reuse `data`
+  // (e.g. for the scanned-size check on the original bytes).
+  const pdf = await getDocumentProxy(new Uint8Array(data));
+  const { text, totalPages } = await extractText(pdf, { mergePages: true });
+  return { text: text ?? "", pages: totalPages ?? 0 };
 }
 
 /**
