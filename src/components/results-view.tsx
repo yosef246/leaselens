@@ -6,7 +6,7 @@
  * highlights that clause; clicking a law citation opens it in a dialog. ?debug=1 shows scores.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Brain, Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ContractStatus } from "@/lib/db/contracts";
 import type { ContractChunkRow } from "@/lib/db/contract-chunks";
@@ -191,8 +191,14 @@ export function ResultsView({
               disabled={pending || question.trim().length < 3}
               className="w-full sm:w-auto"
             >
-              <Send className="h-4 w-4" />
-              שאל
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  שאל
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -203,16 +209,20 @@ export function ResultsView({
               <p className="mb-3 font-medium text-foreground">{qa.question}</p>
               {qa.error ? (
                 <p className="text-sm text-destructive">{qa.error}</p>
-              ) : !qa.done && qa.sources.length === 0 ? (
-                <LoadingRow icon="search" label="מחפש במקורות…" />
               ) : !qa.done && qa.answer === "" ? (
-                <LoadingRow icon="brain" label="מנתח…" />
+                <ThinkingLoader />
               ) : qa.answer.trim() === GROUNDED_EMPTY ? (
                 <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
                   לא מצאנו בחוזה ובחוק בסיס ודאי לתשובה. נסה לנסח אחרת או לשאול על סעיף ספציפי.
                 </p>
               ) : (
-                <CitedAnswer answer={qa.answer} sources={qa.sources} onSourceClick={onSourceClick} debug={debug} />
+                // Sources appear only once the answer is complete.
+                <CitedAnswer
+                  answer={qa.answer}
+                  sources={qa.done ? qa.sources : []}
+                  onSourceClick={onSourceClick}
+                  debug={debug}
+                />
               )}
             </div>
           ))}
@@ -274,17 +284,16 @@ export function ResultsView({
   );
 }
 
-function LoadingRow({ icon, label }: { icon: "search" | "brain"; label: string }) {
-  const Icon = icon === "search" ? Search : Brain;
+function ThinkingLoader() {
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4 animate-pulse" />
-        {label}
-      </div>
+      <Skeleton className="h-4 w-3/4" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-5/6" />
-      <Skeleton className="h-4 w-2/3" />
+      <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <span>Claude חושב על התשובה…</span>
+      </div>
     </div>
   );
 }
