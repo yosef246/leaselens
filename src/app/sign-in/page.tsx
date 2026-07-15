@@ -8,6 +8,8 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { createClient } from "@/lib/supabase/client";
@@ -43,6 +45,7 @@ export default function SignInPage() {
     <main
       dir="rtl"
       style={{
+        position: "relative",
         minHeight: "100dvh",
         display: "flex",
         alignItems: "center",
@@ -50,6 +53,14 @@ export default function SignInPage() {
         padding: "1.5rem",
       }}
     >
+      <Link
+        href="/"
+        className="absolute right-6 top-6 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowRight className="h-4 w-4" />
+        <span>חזרה לדף הבית</span>
+      </Link>
+
       <div style={{ width: "100%", maxWidth: 400 }}>
         <h1 style={{ textAlign: "center", fontSize: "1.5rem", fontWeight: 700, marginBottom: "0.5rem" }}>
           LeaseLens
