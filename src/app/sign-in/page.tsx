@@ -24,10 +24,14 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Show a toast after signing out (redirected here with ?signedout=1), then clean the URL.
+  // Toasts driven by redirect params (sign-out, password reset), then clean the URL.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("signedout") === "1") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("signedout") === "1") {
       toast.success("התנתקת בהצלחה");
+      window.history.replaceState(null, "", "/sign-in");
+    } else if (params.get("reset") === "1") {
+      toast.success("הסיסמה עודכנה, אפשר להתחבר");
       window.history.replaceState(null, "", "/sign-in");
     }
   }, []);

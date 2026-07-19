@@ -1,14 +1,19 @@
 "use client";
 
 /**
- * Reset password — reached from the email link (via /auth/callback, which establishes a
- * recovery session). Sets a new password with updateUser, then goes to /dashboard.
+ * Reset password — the recovery email link lands here directly. Supabase delivers the
+ * recovery token in the URL hash (#access_token=…&refresh_token=…&type=recovery). The browser
+ * client's detectSessionInUrl consumes it and fires PASSWORD_RECOVERY/SIGNED_IN; we wait for
+ * that session, then updateUser({ password }). On success we sign out and send the user to
+ * /sign-in so they log in with the new password.
+ *
+ * Public route (covered by the "/auth" prefix in middleware) — the hash never reaches the
+ * server, so the guard must not redirect before the client can process it.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/errors";
 import { AuthCard } from "@/components/auth-card";
@@ -22,11 +27,30 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<"checking" | "ready" | "invalid">("checking");
 
-  // The recovery link must have established a session; if not, the link is invalid/expired.
+  // Wait for the recovery session established from the URL hash.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setHasSession(!!data.user));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) setStatus("ready");
+    });
+
+    // Fallback: the client may have consumed the hash before this effect ran.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setStatus("ready");
+    });
+
+    // If nothing established a session, the link is invalid/expired.
+    const timer = setTimeout(() => {
+      setStatus((s) => (s === "checking" ? "invalid" : s));
+    }, 2500);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, [supabase]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -43,12 +67,12 @@ export default function ResetPasswordPage() {
       setLoading(false);
       return;
     }
-    toast.success("הסיסמה עודכנה");
-    router.push("/dashboard");
-    router.refresh();
+    // Force a fresh login with the new password.
+    await supabase.auth.signOut();
+    router.push("/sign-in?reset=1");
   }
 
-  if (hasSession === false) {
+  if (status === "invalid") {
     return (
       <AuthCard
         title="הקישור אינו תקף"
@@ -104,8 +128,14 @@ export default function ResetPasswordPage() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" className="w-full" disabled={loading || hasSession === null}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "עדכן סיסמה"}
+        <Button type="submit" className="w-full" disabled={loading || status !== "ready"}>
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : status === "checking" ? (
+            "מאמת קישור…"
+          ) : (
+            "עדכן סיסמה"
+          )}
         </Button>
       </form>
     </AuthCard>

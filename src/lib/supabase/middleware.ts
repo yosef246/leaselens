@@ -16,8 +16,7 @@ const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
   "/forgot-password",
-  "/reset-password",
-  "/auth",
+  "/auth", // includes /auth/reset-password (recovery token arrives in the URL hash)
   "/demo",
 ];
 /** Exact public paths (the landing page — "/" as a prefix would match everything). */
