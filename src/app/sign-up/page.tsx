@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Login — custom email/password form + Google OAuth, styled in the app's design language.
- * Public route (middleware PUBLIC_PREFIXES). On success, navigate to /dashboard.
+ * Sign up — custom email/password form + Google OAuth. If the project requires email
+ * confirmation, we show a "check your inbox" state; otherwise we go straight to /dashboard.
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/errors";
 import { AuthCard } from "@/components/auth-card";
@@ -15,37 +15,71 @@ import { GoogleButton } from "@/components/google-button";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
     if (error) {
       setError(translateAuthError(error));
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+    // No session → email confirmation required.
+    setSent(true);
+    setLoading(false);
+  }
+
+  if (sent) {
+    return (
+      <AuthCard
+        title="כמעט שם!"
+        footer={
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
+            חזרה להתחברות
+          </Link>
+        }
+      >
+        <div className="flex flex-col items-center gap-3 py-2 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <MailCheck className="h-6 w-6" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            שלחנו קישור אימות לכתובת <span className="font-medium text-foreground">{email}</span>.
+            לחץ עליו כדי להשלים את ההרשמה.
+          </p>
+        </div>
+      </AuthCard>
+    );
   }
 
   return (
     <AuthCard
-      title="התחברות"
-      subtitle="נתח את חוזי השכירות שלך מול החוק"
+      title="הרשמה"
+      subtitle="צור חשבון כדי לנתח את החוזה שלך"
       footer={
         <>
-          אין לך חשבון?{" "}
-          <Link href="/sign-up" className="font-medium text-primary hover:underline">
-            הירשם
+          כבר יש לך חשבון?{" "}
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
+            התחבר
           </Link>
         </>
       }
@@ -68,33 +102,26 @@ export default function SignInPage() {
         </div>
 
         <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium">
-              סיסמה
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              שכחתי סיסמה
-            </Link>
-          </div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
+            סיסמה
+          </label>
           <Input
             id="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
+            minLength={6}
             dir="ltr"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="לפחות 6 תווים"
           />
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "התחברות"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "הרשמה"}
         </Button>
       </form>
 
@@ -104,7 +131,7 @@ export default function SignInPage() {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <GoogleButton />
+      <GoogleButton label="הרשמה עם Google" />
     </AuthCard>
   );
 }

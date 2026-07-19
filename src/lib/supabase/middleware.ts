@@ -12,7 +12,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Path prefixes reachable without a session (marketing + auth surface). */
-const PUBLIC_PREFIXES = ["/sign-in", "/auth", "/demo"];
+const PUBLIC_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
+  "/demo",
+];
 /** Exact public paths (the landing page — "/" as a prefix would match everything). */
 const PUBLIC_EXACT = new Set(["/"]);
 
