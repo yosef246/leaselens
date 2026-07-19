@@ -4,10 +4,11 @@
  * Login — custom email/password form + Google OAuth, styled in the app's design language.
  * Public route (middleware PUBLIC_PREFIXES). On success, navigate to /dashboard.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/errors";
 import { AuthCard } from "@/components/auth-card";
@@ -23,6 +24,14 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Show a toast after signing out (redirected here with ?signedout=1), then clean the URL.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("signedout") === "1") {
+      toast.success("התנתקת בהצלחה");
+      window.history.replaceState(null, "", "/sign-in");
+    }
+  }, []);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -33,6 +42,8 @@ export default function SignInPage() {
       setLoading(false);
       return;
     }
+    // Sonner's Toaster lives in the root layout, so this toast survives the client navigation.
+    toast.success("התחברת בהצלחה");
     router.push("/dashboard");
     router.refresh();
   }
@@ -74,7 +85,7 @@ export default function SignInPage() {
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-sm font-medium text-primary hover:underline"
             >
               שכחתי סיסמה
             </Link>
