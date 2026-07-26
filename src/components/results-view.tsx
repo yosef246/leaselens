@@ -6,7 +6,8 @@
  * highlights that clause; clicking a law citation opens it in a dialog. ?debug=1 shows scores.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Send, Loader2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { ContractStatus } from "@/lib/db/contracts";
 import type { ContractChunkRow } from "@/lib/db/contract-chunks";
@@ -141,9 +142,17 @@ export function ResultsView({
     <main className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.15fr_0.85fr]">
       {/* Right (in RTL, first): Q&A */}
       <section className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground">שאל שאלה על החוזה — התשובה מגובה בציטוטים.</p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+            <p className="text-sm text-muted-foreground">שאל שאלה על החוזה — התשובה מגובה בציטוטים.</p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/contracts/${contractId}/review`}>
+              <ShieldAlert className="h-4 w-4" />
+              סעיפים בעייתיים
+            </Link>
+          </Button>
         </div>
 
         {status !== "embedded" && (
