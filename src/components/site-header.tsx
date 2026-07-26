@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { AuthCta } from "@/components/auth-cta";
 
-/** Marketing navbar (landing + demo). CTA adapts to auth state. */
-export function SiteHeader({ authed }: { authed: boolean }) {
+/**
+ * Marketing navbar (landing + demo). The CTA adapts to auth state on the client (AuthCta), which
+ * keeps the host pages statically renderable.
+ */
+export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -13,9 +16,7 @@ export function SiteHeader({ authed }: { authed: boolean }) {
         </Link>
         <div className="flex items-center gap-2">
           <ModeToggle />
-          <Button asChild>
-            <Link href={authed ? "/dashboard" : "/sign-in"}>{authed ? "לדשבורד" : "התחבר"}</Link>
-          </Button>
+          <AuthCta guestLabel="התחבר" authedLabel="לדשבורד" />
         </div>
       </div>
     </header>

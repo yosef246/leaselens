@@ -5,6 +5,9 @@ import { listContractChunks } from "@/lib/db/contract-chunks";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { ResultsView } from "@/components/results-view";
 
+// Private, per-user contract — never indexed (robots.ts also Disallows /contracts).
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function ContractResultsPage({
   params,
 }: {

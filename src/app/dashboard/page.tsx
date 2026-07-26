@@ -4,6 +4,9 @@ import { ContractUploader } from "@/components/contract-uploader";
 import { ContractList } from "@/components/contract-list";
 import { DashboardHeader } from "@/components/dashboard-header";
 
+// Private, per-user area — never indexed (robots.ts also Disallows /dashboard; this is belt-and-suspenders).
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {

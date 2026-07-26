@@ -1,6 +1,6 @@
 import { COMMIT_SHA, BUILT_AT } from "@/generated/version";
 
-export const metadata = { title: "LeaseLens — dev" };
+export const metadata = { title: "LeaseLens — dev", robots: { index: false, follow: false } };
 
 export default function DevPage() {
   return (

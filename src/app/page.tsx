@@ -1,11 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Scale, Search, Quote, Upload, Sparkles, MessageSquareText } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { AuthCta } from "@/components/auth-cta";
+import { JsonLd } from "@/components/json-ld";
+import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Static marketing page — no request-time data; auth-aware CTAs resolve on the client.
+export const dynamic = "force-static";
+
+export const metadata: Metadata = {
+  title: "ניתוח חוזי שכירות מול החוק הישראלי — בעברית, בשניות",
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
 
 const FEATURES = [
   {
@@ -29,6 +41,27 @@ const STEPS = [
   { icon: Upload, title: "העלה חוזה", body: "גרור PDF של חוזה השכירות. הטקסט מחולץ ומפורסר אוטומטית." },
   { icon: Sparkles, title: "המערכת מנתחת", body: "החוזה מוטמע ונשלף מול קורפוס החוק הישראלי." },
   { icon: MessageSquareText, title: "שאל בעברית", body: "״האם סעיף הפיקדון חוקי?״ — קבל תשובה מצוטטת בשניות." },
+];
+
+// Q&A phrased for AEO (AI answer engines) — the same data drives both the visible section and the
+// FAQPage structured data below. Answers are grounded in what the product actually does.
+const FAQ = [
+  {
+    q: "איך מנתחים חוזה שכירות ב-LeaseLens?",
+    a: "מעלים PDF של חוזה השכירות, המערכת מחלצת את הטקסט, מטמיעה אותו ומשווה מול קורפוס החוק הישראלי (RAG), ומחזירה תשובות מצוטטות — עם הפניה לסעיף בחוזה ולסעיף בחוק.",
+  },
+  {
+    q: "כמה עולה לבדוק חוזה שכירות?",
+    a: "אפשר לנסות מיד עם חוזה דוגמה ללא עלות וללא הרשמה, וההרשמה לניתוח החוזה שלך היא חינמית.",
+  },
+  {
+    q: "האם המידע שלי מאובטח?",
+    a: "כל חוזה נשמר תחת החשבון שלך בלבד עם בידוד ברמת השורה (RLS) בבסיס הנתונים — אף משתמש אחר אינו יכול לגשת לחוזים שלך.",
+  },
+  {
+    q: "על אילו חוקים מתבססת הבדיקה?",
+    a: "על 11 חוקים ישראליים רלוונטיים, ובהם חוק השכירות והשאילה, חוק החוזים האחידים, חוק המקרקעין וחוק הגנת הדייר.",
+  },
 ];
 
 function HeroMockup() {
@@ -71,16 +104,32 @@ function HeroMockup() {
   );
 }
 
-export default async function LandingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const authed = !!user;
+const SOFTWARE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: SITE_NAME,
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  inLanguage: "he-IL",
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+};
 
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+};
+
+export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader authed={authed} />
+      <JsonLd data={[SOFTWARE_SCHEMA, FAQ_SCHEMA]} />
+      <SiteHeader />
 
       <main className="flex-1">
         {/* Hero */}
@@ -100,11 +149,13 @@ export default async function LandingPage() {
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/demo">נסה עם חוזה דוגמה</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                <Link href={authed ? "/dashboard" : "/sign-in"}>
-                  {authed ? "לדשבורד" : "התחבר"}
-                </Link>
-              </Button>
+              <AuthCta
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                guestLabel="התחבר"
+                authedLabel="לדשבורד"
+              />
             </div>
           </div>
           <HeroMockup />
@@ -144,6 +195,21 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* FAQ — answers common questions directly (AEO) */}
+        <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+          <h2 className="mb-8 text-center text-2xl font-bold tracking-tight">שאלות נפוצות</h2>
+          <dl className="space-y-4">
+            {FAQ.map((item) => (
+              <div key={item.q} className="rounded-lg border border-border/60 p-5">
+                <dt>
+                  <h3 className="font-semibold">{item.q}</h3>
+                </dt>
+                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </main>
 

@@ -23,6 +23,15 @@ const PUBLIC_PREFIXES = [
 const PUBLIC_EXACT = new Set(["/"]);
 
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+  const isPublic =
+    PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+
+  // Public marketing + auth pages don't need a session lookup. Skipping the Supabase getUser()
+  // round-trip here keeps it out of the TTFB of "/" and "/demo" — the pages that carry the
+  // SEO/AEO weight. A signed-in user's cookie simply refreshes on the next protected navigation.
+  if (isPublic) return NextResponse.next({ request });
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -44,15 +53,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     }
   );
 
+  // Do not add code between createServerClient and getUser() (Supabase docs — session bugs).
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-  const isPublic =
-    PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
-
-  if (!user && !isPublic) {
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     return NextResponse.redirect(url);
