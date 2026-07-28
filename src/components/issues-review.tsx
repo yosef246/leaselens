@@ -9,14 +9,15 @@
  * we refresh the server component afterwards to pull the persisted rows. Per-issue edits/approvals
  * PATCH the same endpoint.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { Loader2, Sparkles, ArrowRight, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ContractStatus } from "@/lib/db/contracts";
 import type { ContractIssueRow, IssueCategory } from "@/lib/db/contract-issues";
 import { Button } from "@/components/ui/button";
+import { RewriteModal } from "@/components/rewrite/rewrite-modal";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<IssueCategory, string> = {
@@ -54,9 +55,24 @@ export function IssuesReview({
   const [issues, setIssues] = useState<ContractIssueRow[]>(initialIssues);
   const [analyzing, setAnalyzing] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [rewriteOpen, setRewriteOpen] = useState(false);
+  const autoPromptedRef = useRef(false);
+
+  const approvedIssues = issues.filter((i) => i.user_approved);
 
   // Keep local state in sync when a server refresh brings freshly-generated issues.
   useEffect(() => setIssues(initialIssues), [initialIssues]);
+
+  // Offer the rewrite once, automatically, when every flagged issue has been approved.
+  useEffect(() => {
+    const allApproved = issues.length > 0 && issues.every((i) => i.user_approved);
+    if (allApproved && !autoPromptedRef.current) {
+      autoPromptedRef.current = true;
+      setRewriteOpen(true);
+    } else if (!allApproved) {
+      autoPromptedRef.current = false;
+    }
+  }, [issues]);
 
   async function runAnalysis() {
     if (analyzing) return;
@@ -232,6 +248,25 @@ export function IssuesReview({
           </article>
         ))}
       </div>
+
+      {approvedIssues.length > 0 && (
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] p-4">
+          <p className="text-sm">
+            אישרת {approvedIssues.length} תיקונים. אפשר ליצור חוזה מתוקן שמשלב אותם.
+          </p>
+          <Button onClick={() => setRewriteOpen(true)}>
+            <FileCheck2 className="h-4 w-4" />
+            סיום סקירה — צור חוזה מתוקן
+          </Button>
+        </div>
+      )}
+
+      <RewriteModal
+        open={rewriteOpen}
+        onOpenChange={setRewriteOpen}
+        contractId={contractId}
+        approvedIssues={approvedIssues}
+      />
     </main>
   );
 }
