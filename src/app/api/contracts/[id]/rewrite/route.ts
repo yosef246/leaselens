@@ -23,12 +23,13 @@ import {
   type AppliedIssue,
 } from "@/lib/db/rewritten-contracts";
 import { rewriteContract, type OriginalSection, type ApprovedFix } from "@/lib/ai/rewrite-contract";
+import { logClaudeUsage } from "@/lib/ai/claude";
 import { renderContractPdf } from "@/lib/pdf/render-contract";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_SECTIONS = 40; // keep the single Claude call within the duration budget.
+const MAX_SECTIONS = 30; // keep the single Claude call within the 60s duration budget.
 const SIGNED_URL_TTL = 3600; // 1 hour.
 const BUCKET = "rewritten-contracts";
 
@@ -96,7 +97,12 @@ export async function POST(
 
         // ---- Step 3: Claude rewrite (the long stage) ----
         emit({ type: "progress", step: 3, label: "מפרמט וכתיבה מחדש", percent: 55 });
-        const rewritten = await rewriteContract(contract.title, originals, approvedFixes);
+        const { document: rewritten, usage } = await rewriteContract(
+          contract.title,
+          originals,
+          approvedFixes
+        );
+        await logClaudeUsage({ contractId: id, endpoint: "rewrite", usage });
 
         // ---- Step 4: render PDF, upload, sign ----
         emit({ type: "progress", step: 4, label: "יצירת PDF", percent: 85 });

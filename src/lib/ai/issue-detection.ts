@@ -10,6 +10,8 @@
 import { z } from "zod";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
+import { cachedSystem } from "@/lib/ai/claude";
+import { extractUsage, type ClaudeUsage } from "@/lib/ai/usage";
 
 const MODEL = "claude-sonnet-5";
 
@@ -48,6 +50,7 @@ export interface SectionAnalysis {
   explanation: string;
   suggested_fix: string;
   law_reference: string | null;
+  usage: ClaudeUsage;
 }
 
 const SYSTEM = `אתה מומחה לחוזי שכירות בישראל. עליך לסווג סעיף בודד מתוך חוזה שכירות למגורים לאחת מהקטגוריות הבאות בלבד:
@@ -94,12 +97,16 @@ export async function analyzeSection(
   text: string,
   lawCandidates: LawCandidate[]
 ): Promise<SectionAnalysis> {
-  const { object } = await generateObject({
+  const { object, usage, providerMetadata } = await generateObject({
     model: anthropic(MODEL),
     schema: sectionSchema,
-    system: SYSTEM,
+    system: cachedSystem(SYSTEM), // prompt-cache the stable classification system prompt
     prompt: buildSectionPrompt(sectionNumber, text, lawCandidates),
-    // claude-sonnet-5 ignores temperature (AI SDK warns) — omitted deliberately.
+    // Disable thinking: sonnet-5 runs adaptive thinking by DEFAULT when omitted, which roughly
+    // doubles latency per call. This is a bounded classification, not open-ended reasoning — and
+    // /review fans out one call per section, so the extra latency is what pushes the route past
+    // Vercel's 60s cap (504). claude-sonnet-5 ignores temperature (AI SDK warns) — omitted.
+    providerOptions: { anthropic: { thinking: { type: "disabled" } } },
   });
 
   const law_reference =
@@ -113,5 +120,6 @@ export async function analyzeSection(
     explanation: object.explanation.trim(),
     suggested_fix: object.suggested_fix.trim(),
     law_reference,
+    usage: extractUsage(usage, providerMetadata),
   };
 }

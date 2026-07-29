@@ -9,6 +9,8 @@
 import { z } from "zod";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
+import { cachedSystem } from "@/lib/ai/claude";
+import { extractUsage, type ClaudeUsage } from "@/lib/ai/usage";
 
 const MODEL = "claude-sonnet-5";
 
@@ -75,12 +77,15 @@ export async function rewriteContract(
   title: string,
   originals: OriginalSection[],
   approved: ApprovedFix[]
-): Promise<RewriteResult> {
-  const { object } = await generateObject({
+): Promise<{ document: RewriteResult; usage: ClaudeUsage }> {
+  const { object, usage, providerMetadata } = await generateObject({
     model: anthropic(MODEL),
     schema: rewriteSchema,
-    system: SYSTEM,
+    system: cachedSystem(SYSTEM), // prompt-cache the stable rewrite system prompt
     prompt: buildPrompt(title, originals, approved),
+    // Thinking stays ON (sonnet-5's default). This is a single call with the full 60s budget — not
+    // the /review fan-out — and it produces a legal document, so reasoning quality is worth the
+    // latency here.
   });
-  return object;
+  return { document: object, usage: extractUsage(usage, providerMetadata) };
 }

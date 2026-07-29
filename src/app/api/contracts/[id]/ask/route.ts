@@ -18,6 +18,8 @@ import { getContract } from "@/lib/db/contracts";
 import { matchLawChunksHybrid, matchContractChunksHybrid } from "@/lib/db/retrieval";
 import { embedText } from "@/lib/embeddings/openai";
 import { buildKeywordQuery } from "@/lib/rag/query";
+import { cachedSystem, logClaudeUsage } from "@/lib/ai/claude";
+import { extractUsage } from "@/lib/ai/usage";
 import {
   buildRagPrompt,
   MIN_SIMILARITY,
@@ -125,10 +127,18 @@ export async function POST(
 
   const result = streamText({
     model: anthropic(MODEL),
-    system,
+    system: cachedSystem(system), // prompt-cache the stable RAG system prompt
     prompt,
     // claude-sonnet-5 does not support `temperature` (AI SDK warns + ignores it).
     maxOutputTokens: 2048,
+    onFinish: async ({ usage, providerMetadata }) => {
+      await logClaudeUsage({
+        contractId: id,
+        endpoint: "ask",
+        model: MODEL,
+        usage: extractUsage(usage, providerMetadata),
+      });
+    },
   });
 
   const sourcesB64 = Buffer.from(JSON.stringify(sources), "utf-8").toString("base64");

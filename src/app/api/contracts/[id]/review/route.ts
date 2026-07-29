@@ -28,12 +28,14 @@ import { embedTexts } from "@/lib/embeddings/openai";
 import { matchLawChunksHybrid } from "@/lib/db/retrieval";
 import { buildKeywordQuery } from "@/lib/rag/query";
 import { analyzeSection, type LawCandidate } from "@/lib/ai/issue-detection";
+import { logClaudeUsage } from "@/lib/ai/claude";
+import { sumUsage } from "@/lib/ai/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_SECTIONS = 40; // hard cap so one invocation fits the free-tier duration budget.
-const CONCURRENCY = 4; // parallel Claude calls.
+const MAX_SECTIONS = 30; // hard cap so one invocation fits the free-tier 60s duration budget.
+const CONCURRENCY = 6; // parallel Claude calls (fewer rounds → safely under the cap).
 const LAW_K = 4; // law candidates handed to the model per section.
 
 /** Bounded-concurrency map that preserves input order. */
@@ -116,6 +118,13 @@ export async function POST(
 
     await deleteIssuesForContract(user.id, id);
     const inserted = await insertContractIssues(user.id, id, issues);
+
+    // One aggregate usage row for the whole review fan-out (one Claude call per section).
+    await logClaudeUsage({
+      contractId: id,
+      endpoint: "review",
+      usage: sumUsage(analyzed.map(({ result }) => result.usage)),
+    });
 
     return NextResponse.json(
       { contract_id: id, analyzed: chunks.length, issues: inserted },

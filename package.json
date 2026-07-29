@@ -16,7 +16,9 @@
     "scrape-laws": "node scripts/scrape-laws.ts",
     "make-fixture": "node scripts/make-fixture.ts",
     "process:sample": "node scripts/process-sample.ts",
-    "ask:sample": "node scripts/ask-sample.ts"
+    "ask:sample": "node scripts/ask-sample.ts",
+    "test:caching": "node scripts/test-caching.ts",
+    "ab:thinking": "node scripts/ab-thinking-review.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.10",
