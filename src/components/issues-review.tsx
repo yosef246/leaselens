@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Sparkles, ArrowRight, FileCheck2 } from "lucide-react";
+import { Loader2, Sparkles, ArrowRight, FileCheck2, MessageSquareWarning } from "lucide-react";
 import { toast } from "sonner";
 import type { ContractStatus } from "@/lib/db/contracts";
 import type { ContractIssueRow, IssueCategory } from "@/lib/db/contract-issues";
@@ -56,6 +56,9 @@ export function IssuesReview({
   const [analyzing, setAnalyzing] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackNote, setFeedbackNote] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
   const autoPromptedRef = useRef(false);
 
   const approvedIssues = issues.filter((i) => i.user_approved);
@@ -119,6 +122,28 @@ export function IssuesReview({
       toast.error(e instanceof Error ? e.message : "העדכון נכשל");
     } finally {
       setSavingId(null);
+    }
+  }
+
+  async function submitFeedback() {
+    const note = feedbackNote.trim();
+    if (note.length < 3 || feedbackSending) return;
+    setFeedbackSending(true);
+    try {
+      const res = await fetch(`/api/contracts/${contractId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "שמירת המשוב נכשלה");
+      toast.success("תודה! המשוב נשמר ויעזור לשפר את הזיהוי");
+      setFeedbackNote("");
+      setFeedbackOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "שמירת המשוב נכשלה");
+    } finally {
+      setFeedbackSending(false);
     }
   }
 
@@ -260,6 +285,46 @@ export function IssuesReview({
           </Button>
         </div>
       )}
+
+      {/* Human feedback on the judge — seed source for a future ground-truth set (see CLAUDE.md). */}
+      <div className="mt-8 border-t border-border/60 pt-4">
+        {feedbackOpen ? (
+          <div className="space-y-2">
+            <label htmlFor="judge-feedback" className="text-sm font-medium">
+              השופט טעה או פספס משהו? ספר לנו — זה משפר את הזיהוי.
+            </label>
+            <textarea
+              id="judge-feedback"
+              value={feedbackNote}
+              onChange={(e) => setFeedbackNote(e.target.value)}
+              rows={3}
+              placeholder="למשל: ״סעיף 6 בעצם בעייתי כי…״, או ״הסימון על סעיף 4 שגוי כי…״"
+              className="w-full resize-y rounded-lg border border-input bg-background p-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={submitFeedback}
+                disabled={feedbackSending || feedbackNote.trim().length < 3}
+              >
+                {feedbackSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "שלח משוב"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setFeedbackOpen(false)}>
+                ביטול
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <MessageSquareWarning className="h-4 w-4" />
+            השופט טעה או פספס משהו?
+          </button>
+        )}
+      </div>
 
       <RewriteModal
         open={rewriteOpen}
