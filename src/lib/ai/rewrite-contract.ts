@@ -114,9 +114,12 @@ export async function rewriteContract(
     schema: llmSchema,
     system: cachedSystem(SYSTEM), // prompt-cache the stable rewrite system prompt
     prompt: buildPrompt(tasks),
-    // Thinking stays ON (sonnet-5's default): output is now just the fixed sections (a handful),
-    // so a single call fits the 60s budget with room to spare, and the legal rephrasing keeps its
-    // reasoning quality.
+    // Disable thinking. Proven empirically: sonnet-5's default adaptive thinking on a single legal
+    // rewrite call exceeds Vercel's 60s cap even after shrinking the output to just the fixed
+    // sections — the thinking phase itself is the cost, not the output volume. Disabling it makes
+    // the call reliably fit. Quality holds: we're applying already-approved, user-reviewed fixes to
+    // specific clauses (constrained rephrasing), not open-ended reasoning.
+    providerOptions: { anthropic: { thinking: { type: "disabled" } } },
   });
 
   const validRefs = new Set(tasks.map((t) => t.ref));
