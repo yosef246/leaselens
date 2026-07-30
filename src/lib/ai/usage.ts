@@ -1,10 +1,14 @@
 /**
  * Claude usage normalization + cost/savings math for prompt-caching telemetry.
  *
- * The Vercel AI SDK reports token usage on `result.usage` (inputTokens/outputTokens) and the
- * Anthropic-specific cache counts on `result.providerMetadata.anthropic`
- * (cacheCreationInputTokens / cacheReadInputTokens). At the API level, `inputTokens` is the
- * UNCACHED remainder — total input = input + cacheCreation + cacheRead (see Anthropic caching docs).
+ * ⚠️ Field-shape gotcha (verified against ai@7 + @ai-sdk/anthropic@4): the cache token counts are
+ * NOT at `providerMetadata.anthropic.cacheReadInputTokens`. They live in two places:
+ *   - `usage.inputTokenDetails` (AI-SDK-normalized, camelCase): { noCacheTokens, cacheReadTokens,
+ *     cacheWriteTokens } — and here `usage.inputTokens` is the TOTAL (noCache + cacheRead + write).
+ *   - `providerMetadata.anthropic.usage` (raw Anthropic, snake_case): { input_tokens (=uncached),
+ *     cache_read_input_tokens, cache_creation_input_tokens }.
+ * We prefer inputTokenDetails and fall back to the raw block. `ClaudeUsage.inputTokens` below is the
+ * UNCACHED (full-price) count, so calculateCost adds cacheRead/cacheWrite on top without double-counting.
  */
 import type { ProviderMetadata } from "ai";
 
@@ -33,23 +37,42 @@ const PRICE_OUTPUT = 15;
 const PRICE_CACHE_WRITE = 3.75; // 1.25 x input
 const PRICE_CACHE_READ = 0.3; // 0.1 x input
 
-const anthropicMeta = (pm: ProviderMetadata | undefined) =>
-  (pm?.anthropic ?? {}) as {
-    cacheCreationInputTokens?: number;
-    cacheReadInputTokens?: number;
+interface UsageShape {
+  inputTokens?: number;
+  outputTokens?: number;
+  inputTokenDetails?: {
+    noCacheTokens?: number;
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+  };
+}
+
+const rawAnthropicUsage = (pm: ProviderMetadata | undefined) =>
+  ((pm?.anthropic as { usage?: Record<string, number> } | undefined)?.usage ?? {}) as {
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
   };
 
-/** Normalize the AI SDK's usage + provider metadata into a flat token record. */
+/** Normalize the AI SDK's usage + provider metadata into a flat token record (uncached input). */
 export function extractUsage(
-  usage: { inputTokens?: number; outputTokens?: number } | undefined,
+  usage: UsageShape | undefined,
   providerMetadata: ProviderMetadata | undefined
 ): ClaudeUsage {
-  const meta = anthropicMeta(providerMetadata);
+  const details = usage?.inputTokenDetails;
+  const raw = rawAnthropicUsage(providerMetadata);
+
+  const cacheReadTokens = details?.cacheReadTokens ?? raw.cache_read_input_tokens ?? 0;
+  const cacheCreationTokens = details?.cacheWriteTokens ?? raw.cache_creation_input_tokens ?? 0;
+
+  // `usage.inputTokens` is the TOTAL (incl. cached) in ai@7; derive the uncached, full-price part.
+  const totalInput = usage?.inputTokens ?? 0;
+  const inputTokens = details?.noCacheTokens ?? Math.max(0, totalInput - cacheReadTokens - cacheCreationTokens);
+
   return {
-    inputTokens: usage?.inputTokens ?? 0,
+    inputTokens,
     outputTokens: usage?.outputTokens ?? 0,
-    cacheCreationTokens: meta.cacheCreationInputTokens ?? 0,
-    cacheReadTokens: meta.cacheReadInputTokens ?? 0,
+    cacheCreationTokens,
+    cacheReadTokens,
   };
 }
 

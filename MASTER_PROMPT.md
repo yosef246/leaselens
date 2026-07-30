@@ -1,5 +1,9 @@
 # LeaseLens — AI Rental Contract Analyzer
 
+> ⚠️ **Original spec/prompt (historical).** Kept as the founding brief. The build diverged — see
+> **`docs/IMPLEMENTATION.md`** for the as-built truth (Supabase Auth not Clerk; endpoints
+> `ask`/`review`/`rewrite`; 11 laws; prompt caching + telemetry).
+
 Build a full-stack AI app that analyzes Hebrew residential rental contracts
 against Israeli rental law. Portfolio project, Hebrew-first, RTL, 4 weeks solo.
 

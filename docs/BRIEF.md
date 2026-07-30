@@ -1,5 +1,8 @@
 # LeaseLens — Project Brief
 
+> ⚠️ **Planning doc.** For the as-built truth see **`docs/IMPLEMENTATION.md`** (Supabase Auth not
+> Clerk; endpoints `ask`/`review`/`rewrite`; `unpdf` not pdf-parse; 11 laws).
+
 The authoritative spec is `MASTER_PROMPT.md` at the project root. This brief points the team at it.
 
 ## One-line
@@ -10,8 +13,9 @@ Upload Hebrew PDF → within ~60s: (1) Hebrew summary, (2) red flags with exact 
 
 ## Stack (locked)
 Next.js 15 (App Router, Server Components, TS) · Tailwind + shadcn/ui · Vercel AI SDK ·
-Supabase (Postgres + pgvector + Storage) · Clerk auth · Claude `claude-sonnet-5` (analysis + chat) ·
-OpenAI `text-embedding-3-small` (embeddings only) · pdf-parse · react-pdf · Deploy: Vercel + Supabase free tier.
+Supabase (Postgres + pgvector + Storage + Auth) · Claude `claude-sonnet-5` (analysis + chat) ·
+OpenAI `text-embedding-3-small` (embeddings only) · unpdf · react-pdf · Deploy: Vercel + Supabase free tier.
+<!-- as-built: auth is Supabase (not Clerk); PDF extraction is unpdf (not pdf-parse). See docs/IMPLEMENTATION.md -->
 
 ## Target laws (Phase 1 corpus)
 - חוק השכירות והשאילה, תשל"א-1971
@@ -29,4 +33,4 @@ Zod at all API boundaries · no dead code · free tier only · commit per accept
 
 ## Secrets
 Env vars live in `.env.local` (git-ignored), filled manually by the owner. Never hardcode keys.
-Keys: Supabase (URL/anon/service_role), Clerk (publishable/secret), Anthropic, OpenAI, PostHog.
+Keys: Supabase (URL/anon/service_role), Anthropic, OpenAI. (No Clerk — auth is Supabase. PostHog not wired.)

@@ -18,7 +18,7 @@ import { getContract } from "@/lib/db/contracts";
 import { matchLawChunksHybrid, matchContractChunksHybrid } from "@/lib/db/retrieval";
 import { embedText } from "@/lib/embeddings/openai";
 import { buildKeywordQuery } from "@/lib/rag/query";
-import { cachedSystem, logClaudeUsage } from "@/lib/ai/claude";
+import { cachedSystem, logClaudeUsage, CLAUDE_MODEL } from "@/lib/ai/claude";
 import { extractUsage } from "@/lib/ai/usage";
 import {
   buildRagPrompt,
@@ -32,7 +32,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const TOP_K = 6;
-const MODEL = "claude-sonnet-5";
+const MODEL = CLAUDE_MODEL;
 
 const askSchema = z.object({
   question: z.string().trim().min(3, "שאלה קצרה מדי").max(1000, "שאלה ארוכה מדי"),

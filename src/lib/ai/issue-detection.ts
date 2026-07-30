@@ -10,10 +10,10 @@
 import { z } from "zod";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateObject } from "ai";
-import { cachedSystem } from "@/lib/ai/claude";
+import { cachedSystem, CLAUDE_MODEL } from "@/lib/ai/claude";
 import { extractUsage, type ClaudeUsage } from "@/lib/ai/usage";
 
-const MODEL = "claude-sonnet-5";
+const MODEL = CLAUDE_MODEL;
 
 export const ISSUE_CATEGORIES = [
   "ok",

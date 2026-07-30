@@ -1,5 +1,9 @@
 # LeaseLens — Requirements (אפיון)
 
+> ⚠️ **Planning doc (original spec).** The build diverged — notably **Supabase Auth, not Clerk**,
+> and endpoints **`ask`/`review`/`rewrite`** (not `analyze`/`chat`). See **`docs/IMPLEMENTATION.md`**
+> for the authoritative as-built record — it wins on any conflict.
+
 Status: Phase 1 deliverable (requirements-analyst). Formalizes `MASTER_PROMPT.md`; does not
 override any locked decision in it (stack, DB schema, model, target laws, phase order).
 

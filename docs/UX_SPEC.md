@@ -1,5 +1,9 @@
 # LeaseLens — UX Spec
 
+> ⚠️ **Planning doc (original spec).** The build diverged — auth is **Supabase** (not Clerk), and
+> the app pages are `/dashboard` + `/contracts/[id]` + `/contracts/[id]/review` (not `/upload` or a
+> singular `/contract/[id]`). See **`docs/IMPLEMENTATION.md`** for the as-built record.
+
 Status: Phase 2 deliverable (ux-ui-designer). Formalizes the Hebrew-RTL information
 architecture and interaction flows on top of `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`,
 and `docs/DECISIONS.md`. Does not alter routes, schema, or the D2 disclaimer wording — all are

@@ -1,5 +1,8 @@
 # LeaseLens — Acceptance Criteria & Results
 
+> ⚠️ **Planning doc (original spec).** Endpoint/route names here predate the build (`ask`/`review`/
+> `rewrite`, not `analyze`/`chat`). See **`docs/IMPLEMENTATION.md`** for the as-built record.
+
 Per-phase acceptance. A phase is "done" only when its criteria pass against a real run.
 
 ---

@@ -1,5 +1,10 @@
 # LeaseLens — Architecture
 
+> ⚠️ **Planning doc (original spec).** The build diverged — notably **Supabase Auth, not Clerk**
+> (this file's §4 is superseded), endpoints **`ask`/`review`/`rewrite`** (not `analyze`/`chat`), and
+> `claude-sonnet-5` via the Vercel AI SDK. See **`docs/IMPLEMENTATION.md`** for the authoritative
+> as-built record — it wins on any conflict.
+
 Status: Phase 1 deliverable (project-architect). Formalizes `MASTER_PROMPT.md` +
 `docs/REQUIREMENTS.md` into an implementable blueprint. Complies exactly with
 `docs/DECISIONS.md` (D1–D3), which overrides any conflicting detail here. Does not change

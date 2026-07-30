@@ -1,5 +1,9 @@
 # LeaseLens — Team Plan
 
+> ⚠️ **Planning doc (original spec).** The build diverged from this plan — see
+> **`docs/IMPLEMENTATION.md`** for the authoritative as-built record (Supabase Auth not Clerk;
+> endpoints `ask`/`review`/`rewrite`).
+
 Derived from `docs/REQUIREMENTS.md` and `MASTER_PROMPT.md`. Pipeline order follows the P0–P7
 build order already locked in MASTER_PROMPT; this document assigns WHO does WHAT, not HOW.
 Architecture, schema, tech choices, and phase order are NOT re-decided here.
