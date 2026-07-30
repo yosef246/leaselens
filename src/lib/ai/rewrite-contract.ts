@@ -3,8 +3,12 @@
  * /review screen, produce a corrected contract that keeps the original structure and numbering and
  * replaces only the flagged clauses.
  *
- * Output is structured (generateObject) so the PDF renderer gets clean sections rather than having
- * to parse free text — same anti-drift approach as issue-detection.
+ * Output-volume design: Claude rewrites ONLY the sections that have an approved fix (each keyed by a
+ * `ref` = its index in the originals). The FULL document is then reassembled here on the server —
+ * unchanged sections keep their original text verbatim, fixed sections get Claude's polished prose.
+ * This keeps the model's output small (a handful of sections, not the whole contract), so a single
+ * call stays well within the serverless duration budget even with thinking on. Reassembling
+ * server-side is also more faithful than asking the model to copy unchanged clauses.
  */
 import { z } from "zod";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -14,17 +18,21 @@ import { extractUsage, type ClaudeUsage } from "@/lib/ai/usage";
 
 const MODEL = CLAUDE_MODEL;
 
-const rewriteSchema = z.object({
-  title: z.string(),
+/** Claude returns only the rewritten fixed sections, keyed by ref. */
+const llmSchema = z.object({
   sections: z.array(
     z.object({
-      number: z.string().nullable(),
+      ref: z.number().int(),
       text: z.string(),
     })
   ),
 });
 
-export type RewriteResult = z.infer<typeof rewriteSchema>;
+/** The reassembled full document handed to the PDF renderer. */
+export interface RewriteResult {
+  title: string;
+  sections: { number: string | null; text: string }[];
+}
 
 export interface OriginalSection {
   section_number: string | null;
@@ -36,41 +44,37 @@ export interface ApprovedFix {
   suggested_fix: string;
 }
 
-const SYSTEM = `אתה עורך דין מומחה לחוזי שכירות בישראל. משימתך: לשכתב חוזה שכירות קיים כך שיתוקנו הסעיפים הבעייתיים שסומנו.
+const EMPTY_USAGE: ClaudeUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheCreationTokens: 0,
+  cacheReadTokens: 0,
+};
+
+const SYSTEM = `אתה עורך דין מומחה לחוזי שכירות בישראל. תקבל סעיפים בודדים מתוך חוזה שכירות, כל אחד עם מזהה ref, הנוסח המקורי, ותיקון מאושר שיש להחיל.
 
 כללי ברזל:
-1. שמור על המבנה והמספור המקוריים של החוזה. אל תוסיף, תמחק או תמספר מחדש סעיפים.
-2. החלף אך ורק את הסעיפים שסופקה עבורם הצעת תיקון מאושרת. סעיפים שלא סומנו — העתק כלשונם, ללא שינוי.
-3. שמור על סגנון פורמלי-משפטי אחיד לאורך כל החוזה.
-4. אל תוסיף הערות, הסברים, הדגשות או טקסט מטא בגוף החוזה — רק לשון החוזה עצמו.
-5. ענה בעברית בלבד.
-6. החזר title (כותרת החוזה) ו-sections: מערך של {number, text}, בסדר המקורי.`;
+1. שכתב כל סעיף כך שישקף את התיקון המאושר, תוך שמירה על ההקשר והמשמעות של הסעיף.
+2. שמור על סגנון פורמלי-משפטי, בעברית בלבד.
+3. אל תוסיף הערות, הסברים, כותרות או טקסט מטא — רק לשון הסעיף עצמו.
+4. אל תשנה את מספור הסעיפים.
+5. החזר sections: מערך של {ref, text}, כאשר ref זהה למזהה שסופק וה-text הוא הנוסח המתוקן. החזר אך ורק את הסעיפים שסופקו לך.`;
 
-function buildPrompt(
-  title: string,
-  originals: OriginalSection[],
-  approved: ApprovedFix[]
-): string {
-  const fixByKey = new Map<string, ApprovedFix>();
-  approved.forEach((f) => fixByKey.set(f.section_number ?? "", f));
+interface RewriteTask {
+  ref: number;
+  section_number: string | null;
+  original: string;
+  fix: ApprovedFix;
+}
 
-  const blocks = originals.map((s) => {
-    const key = s.section_number ?? "";
-    const fix = fixByKey.get(key);
-    const header = s.section_number ? `סעיף ${s.section_number}` : "קטע";
-    const fixLine = fix
-      ? `\nתיקון מאושר להחלה (${fix.category}): ${fix.suggested_fix}`
-      : "\n(אין תיקון — העתק כלשונו)";
-    return `--- ${header} ---\nמקור: ${s.text}${fixLine}`;
+function buildPrompt(tasks: RewriteTask[]): string {
+  const blocks = tasks.map((t) => {
+    const header = t.section_number ? `סעיף ${t.section_number}` : "קטע";
+    return `--- ref ${t.ref} | ${header} ---\nמקור: ${t.original}\nתיקון מאושר (${t.fix.category}): ${t.fix.suggested_fix}`;
   });
+  return `שכתב את הסעיפים הבאים בלבד. לכל סעיף החזר {ref, text} עם הנוסח המתוקן.
 
-  return `כותרת החוזה: ${title}
-
-להלן סעיפי החוזה המקורי. לכל סעיף שיש לו "תיקון מאושר" — שכתב אותו כך שישקף את התיקון תוך שמירה על סגנון משפטי. סעיפים ללא תיקון — העתק כלשונם.
-
-${blocks.join("\n\n")}
-
-החזר את החוזה המלא המתוקן.`;
+${blocks.join("\n\n")}`;
 }
 
 export async function rewriteContract(
@@ -78,14 +82,48 @@ export async function rewriteContract(
   originals: OriginalSection[],
   approved: ApprovedFix[]
 ): Promise<{ document: RewriteResult; usage: ClaudeUsage }> {
+  // Map each approved fix to its section_number (first wins on duplicate keys).
+  const fixByKey = new Map<string, ApprovedFix>();
+  for (const f of approved) {
+    const key = f.section_number ?? "";
+    if (!fixByKey.has(key)) fixByKey.set(key, f);
+  }
+
+  // Only the originals that have an approved fix are sent to the model.
+  const tasks: RewriteTask[] = [];
+  originals.forEach((o, i) => {
+    const fix = fixByKey.get(o.section_number ?? "");
+    if (fix) tasks.push({ ref: i, section_number: o.section_number, original: o.text, fix });
+  });
+
+  const assemble = (rewritten: Map<number, string>): RewriteResult => ({
+    title,
+    sections: originals.map((o, i) => ({
+      number: o.section_number,
+      text: rewritten.get(i) ?? o.text,
+    })),
+  });
+
+  // Defensive: nothing to rewrite (the route requires >=1 approved fix, so this is rare).
+  if (tasks.length === 0) {
+    return { document: assemble(new Map()), usage: EMPTY_USAGE };
+  }
+
   const { object, usage, providerMetadata } = await generateObject({
     model: anthropic(MODEL),
-    schema: rewriteSchema,
+    schema: llmSchema,
     system: cachedSystem(SYSTEM), // prompt-cache the stable rewrite system prompt
-    prompt: buildPrompt(title, originals, approved),
-    // Thinking stays ON (sonnet-5's default). This is a single call with the full 60s budget — not
-    // the /review fan-out — and it produces a legal document, so reasoning quality is worth the
-    // latency here.
+    prompt: buildPrompt(tasks),
+    // Thinking stays ON (sonnet-5's default): output is now just the fixed sections (a handful),
+    // so a single call fits the 60s budget with room to spare, and the legal rephrasing keeps its
+    // reasoning quality.
   });
-  return { document: object, usage: extractUsage(usage, providerMetadata) };
+
+  const validRefs = new Set(tasks.map((t) => t.ref));
+  const rewritten = new Map<number, string>();
+  for (const s of object.sections) {
+    if (validRefs.has(s.ref) && s.text.trim()) rewritten.set(s.ref, s.text.trim());
+  }
+
+  return { document: assemble(rewritten), usage: extractUsage(usage, providerMetadata) };
 }

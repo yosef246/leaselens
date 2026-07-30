@@ -85,6 +85,7 @@ export function RewriteModal({
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let receivedDone = false;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -106,10 +107,16 @@ export function RewriteModal({
             setPercent(100);
             setPdfUrl(frame.url);
             setPhase("done");
+            receivedDone = true;
           } else if (frame.type === "error") {
             throw new Error(frame.message);
           }
         }
+      }
+      // Stream ended without a terminal frame → the server function was killed (e.g. the duration
+      // cap). Surface an error instead of leaving the progress bar frozen forever.
+      if (!receivedDone) {
+        throw new Error("יצירת החוזה נמשכה זמן רב מדי ונקטעה. נסה שוב.");
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "יצירת החוזה נכשלה");
