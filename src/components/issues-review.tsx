@@ -180,7 +180,7 @@ export function IssuesReview({
         <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
           <span aria-hidden className="mt-px">⚠️</span>
           <span>
-            עדי בדק את {analyzedSections} הסעיפים הראשונים בחוזה. מכיוון שהחוזה ארוך מ-{analyzedSections}{" "}
+            השופט בדק את {analyzedSections} הסעיפים הראשונים בחוזה. מכיוון שהחוזה ארוך מ-{analyzedSections}{" "}
             סעיפים, ייתכן שסעיפים בסוף המסמך לא נסרקו — מומלץ לעבור עליהם ידנית.
           </span>
         </div>
