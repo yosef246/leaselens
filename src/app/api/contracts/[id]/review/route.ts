@@ -34,8 +34,12 @@ import { sumUsage } from "@/lib/ai/usage";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_SECTIONS = 30; // hard cap so one invocation fits the free-tier 60s duration budget.
-const CONCURRENCY = 6; // parallel Claude calls (fewer rounds → safely under the cap).
+// Vercel Hobby caps a function at 60s. Review fans out one Claude call per section, and a single
+// generateObject can run ~10-12s — so total time is roughly ceil(MAX_SECTIONS / CONCURRENCY) rounds
+// × ~12s. 16/8 = 2 rounds (~25-30s) leaves comfortable headroom. Larger contracts are analyzed to
+// their first MAX_SECTIONS sections; full coverage would need request batching or a non-Hobby plan.
+const MAX_SECTIONS = 16;
+const CONCURRENCY = 8;
 const LAW_K = 4; // law candidates handed to the model per section.
 
 /** Bounded-concurrency map that preserves input order. */
