@@ -27,7 +27,7 @@ import {
 import { embedTexts } from "@/lib/embeddings/openai";
 import { matchLawChunksHybrid } from "@/lib/db/retrieval";
 import { buildKeywordQuery } from "@/lib/rag/query";
-import { analyzeSection, type LawCandidate } from "@/lib/ai/issue-detection";
+import { analyzeSection, MAX_REVIEW_SECTIONS, type LawCandidate } from "@/lib/ai/issue-detection";
 import { logClaudeUsage } from "@/lib/ai/claude";
 import { sumUsage } from "@/lib/ai/usage";
 
@@ -38,7 +38,7 @@ export const maxDuration = 60;
 // generateObject can run ~10-12s — so total time is roughly ceil(MAX_SECTIONS / CONCURRENCY) rounds
 // × ~12s. 16/8 = 2 rounds (~25-30s) leaves comfortable headroom. Larger contracts are analyzed to
 // their first MAX_SECTIONS sections; full coverage would need request batching or a non-Hobby plan.
-const MAX_SECTIONS = 16;
+const MAX_SECTIONS = MAX_REVIEW_SECTIONS; // 16 — shared with the review page's truncation warning
 const CONCURRENCY = 8;
 const LAW_K = 4; // law candidates handed to the model per section.
 

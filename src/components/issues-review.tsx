@@ -45,11 +45,15 @@ export function IssuesReview({
   title,
   status,
   initialIssues,
+  truncated,
+  analyzedSections,
 }: {
   contractId: string;
   title: string;
   status: ContractStatus;
   initialIssues: ContractIssueRow[];
+  truncated: boolean;
+  analyzedSections: number;
 }) {
   const router = useRouter();
   const [issues, setIssues] = useState<ContractIssueRow[]>(initialIssues);
@@ -169,6 +173,16 @@ export function IssuesReview({
       {status !== "embedded" && (
         <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
           החוזה עדיין לא עובד. חזור לדשבורד והרץ ״עבד״ לפני הסקירה.
+        </div>
+      )}
+
+      {truncated && (
+        <div className="mb-6 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+          <span aria-hidden className="mt-px">⚠️</span>
+          <span>
+            עדי בדק את {analyzedSections} הסעיפים הראשונים בחוזה. מכיוון שהחוזה ארוך מ-{analyzedSections}{" "}
+            סעיפים, ייתכן שסעיפים בסוף המסמך לא נסרקו — מומלץ לעבור עליהם ידנית.
+          </span>
         </div>
       )}
 

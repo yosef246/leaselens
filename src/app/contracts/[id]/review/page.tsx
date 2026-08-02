@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getContract } from "@/lib/db/contracts";
 import { listContractIssues } from "@/lib/db/contract-issues";
+import { countChunksForContract } from "@/lib/db/contract-chunks";
+import { MAX_REVIEW_SECTIONS } from "@/lib/ai/issue-detection";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { IssuesReview } from "@/components/issues-review";
 
@@ -24,7 +26,13 @@ export default async function ContractReviewPage({
   const contract = await getContract(user.id, id);
   if (!contract) notFound();
 
-  const issues = await listContractIssues(user.id, id);
+  const [issues, totalSections] = await Promise.all([
+    listContractIssues(user.id, id),
+    countChunksForContract(user.id, id),
+  ]);
+  // The scan analyzes only the first MAX_REVIEW_SECTIONS sections (60s cap). Warn if the contract
+  // is longer, so the user knows the tail wasn't reviewed. Only surfaced when actually truncated.
+  const truncated = totalSections > MAX_REVIEW_SECTIONS;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -34,6 +42,8 @@ export default async function ContractReviewPage({
         title={contract.title}
         status={contract.status}
         initialIssues={issues}
+        truncated={truncated}
+        analyzedSections={MAX_REVIEW_SECTIONS}
       />
     </div>
   );

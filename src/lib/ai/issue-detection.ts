@@ -15,6 +15,13 @@ import { extractUsage, type ClaudeUsage } from "@/lib/ai/usage";
 
 const MODEL = CLAUDE_MODEL;
 
+/**
+ * How many contract sections /review analyzes. It fans out one Claude call per section, so this
+ * caps the fan-out to fit Vercel's 60s function limit (see the review route). Shared with the
+ * review page so it can warn the user when a longer contract was truncated to its first N sections.
+ */
+export const MAX_REVIEW_SECTIONS = 16;
+
 export const ISSUE_CATEGORIES = [
   "ok",
   "ambiguous",
