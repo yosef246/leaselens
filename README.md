@@ -78,9 +78,12 @@ The parts worth walking through:
    schemas; law citations are anchored to numbered markers that are *mechanically validated* against
    what was retrieved — the model cannot invent a section number. → `lib/ai/`
 
-4. **Prompt caching with measured savings.** `cache_control` on the stable system prompt, plus an
-   `ai_usage_logs` telemetry table; a verification harness measures **~66% input-token savings** on
-   repeat calls. → `lib/ai/usage.ts`, `pnpm test:caching`
+4. **Prompt caching, applied where it pays.** `cache_control` on the stable system prompt of the
+   **review** path — the heavy call (~40-way fan-out, ~50K input tokens), where a cached prefix is
+   worth it. A local harness measures **~66% input-token savings**, and it's confirmed in production:
+   `cache_read > 0` in the `ai_usage_logs` telemetry table. The single small **rewrite** call sits
+   below Anthropic's ~1024-token cache minimum, so it deliberately isn't cached — caching a lone
+   short prompt buys nothing. → `lib/ai/usage.ts`, `pnpm test:caching`, `pnpm check:telemetry`
 
 5. **Engineering within hard constraints.** Everything fits Vercel's 60s serverless cap: live SSE
    progress, `thinking` tuned per call type for the latency/quality tradeoff, and a bounded section
@@ -123,7 +126,8 @@ loads via `pnpm embed-laws`.
 | Command | Purpose |
 |---|---|
 | `pnpm ask:sample` | Offline RAG "ask" smoke test on the sample contract |
-| `pnpm test:caching` | Verify prompt caching engages (expects `cache_read > 0`) |
+| `pnpm test:caching` | Verify prompt caching engages locally (expects `cache_read > 0`) |
+| `pnpm check:telemetry` | Read the latest `ai_usage_logs` rows from prod and confirm caching in the wild |
 | `pnpm ab:thinking` | A/B the review classifier across `thinking` modes (`THINKING_MODE=off\|low\|on`) |
 
 ## Limitations & tradeoffs

@@ -18,6 +18,7 @@
     "process:sample": "node scripts/process-sample.ts",
     "ask:sample": "node scripts/ask-sample.ts",
     "test:caching": "node scripts/test-caching.ts",
+    "check:telemetry": "node scripts/check-telemetry.ts",
     "ab:thinking": "node scripts/ab-thinking-review.ts"
   },
   "dependencies": {
