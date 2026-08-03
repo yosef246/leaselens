@@ -7,7 +7,7 @@
  *   2. build the rewrite request                        (משלב תיקונים)
  *   3. Claude rewrite (the long stage)                  (מפרמט וכתיבה מחדש)
  *   4. render PDF (pdf-lib) + upload + sign URL         (יצירת PDF)
- *   -> terminal `done` frame carries the signed PDF URL (valid 1h) + rewrite id.
+ *   -> terminal `done` frame carries the signed PDF URL (valid 24h) + rewrite id.
  *
  * Guarded twice: session required + explicit ownership (getContract), on top of RLS. The PDF is
  * produced in-process (pdf-lib) and stored in the private rewritten-contracts bucket — the
@@ -30,7 +30,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_SECTIONS = 30; // keep the single Claude call within the 60s duration budget.
-const SIGNED_URL_TTL = 3600; // 1 hour.
+const SIGNED_URL_TTL = 86400; // 24 hours — the link is shared (WhatsApp/download), so give it room.
 const BUCKET = "rewritten-contracts";
 
 type SseFrame =
