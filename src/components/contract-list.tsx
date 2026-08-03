@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Loader2, MessageSquareText, FileQuestion } from "lucide-react";
+import { FileText, Loader2, MessageSquareText, FileQuestion, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ContractRow, ContractStatus } from "@/lib/db/contracts";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +34,7 @@ const fmtDate = (iso: string) =>
 export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
 
   const anyTransient = useMemo(
     () =>
@@ -79,6 +80,34 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
     [router]
   );
 
+  const remove = useCallback(
+    async (id: string, title: string) => {
+      if (
+        !window.confirm(
+          `למחוק את "${title}"?\nהפעולה בלתי הפיכה — הניתוח, הסעיפים והחוזה המתוקן יימחקו לצמיתות.`
+        )
+      ) {
+        return;
+      }
+      setDeleting((d) => ({ ...d, [id]: true }));
+      try {
+        const res = await fetch(`/api/contracts/${id}`, { method: "DELETE" });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) throw new Error(data.error ?? "המחיקה נכשלה");
+        toast.success("החוזה נמחק");
+        router.refresh();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "המחיקה נכשלה");
+        setDeleting((d) => {
+          const n = { ...d };
+          delete n[id];
+          return n;
+        });
+      }
+    },
+    [router]
+  );
+
   if (contracts.length === 0) {
     return (
       <Card className="border-dashed">
@@ -105,9 +134,26 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
                   <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <span className="truncate font-medium">{c.title}</span>
                 </div>
-                <Badge className={cn("shrink-0 border-transparent", status.className)}>
-                  {isBusy && !TRANSIENT.includes(c.status) ? "מעבד…" : status.label}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Badge className={cn("border-transparent", status.className)}>
+                    {isBusy && !TRANSIENT.includes(c.status) ? "מעבד…" : status.label}
+                  </Badge>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => remove(c.id, c.title)}
+                    disabled={deleting[c.id]}
+                    aria-label="מחק חוזה"
+                    title="מחק חוזה"
+                  >
+                    {deleting[c.id] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <p className="text-xs text-muted-foreground">הועלה {fmtDate(c.created_at)}</p>

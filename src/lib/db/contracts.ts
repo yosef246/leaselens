@@ -88,3 +88,19 @@ export async function updateContractStatus(
 
   if (error) throw new Error(`updateContractStatus failed: ${error.message}`);
 }
+
+/**
+ * Delete a contract (owner-only). The DB cascades to contract_chunks, contract_issues,
+ * rewritten_contracts, ai_usage_logs, and user_feedback via their `on delete cascade` FKs.
+ * Storage objects are NOT cascade-managed — the caller cleans those up separately.
+ */
+export async function deleteContract(userId: string, contractId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("contracts")
+    .delete()
+    .eq("id", contractId)
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`deleteContract failed: ${error.message}`);
+}
