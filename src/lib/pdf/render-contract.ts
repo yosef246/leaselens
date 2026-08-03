@@ -13,7 +13,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import { toVisualRtl } from "@/lib/pdf/bidi";
+import { fixRtlNumerals } from "@/lib/pdf/bidi";
 import { D2_DISCLAIMER } from "@/lib/rag/prompt";
 
 export interface RewriteSection {
@@ -95,9 +95,10 @@ class Cursor {
 
     for (const logicalLine of wrapLogical(text, font, size, CONTENT_W)) {
       this.ensureSpace(lineHeight);
-      const visual = toVisualRtl(logicalLine);
-      const w = font.widthOfTextAtSize(visual, size);
-      this.page.drawText(visual, { x: RIGHT_EDGE - w, y: this.y - size, size, font, color });
+      // Draw in LOGICAL order (fontkit handles Hebrew RTL); only fix embedded numerals.
+      const drawn = fixRtlNumerals(logicalLine);
+      const w = font.widthOfTextAtSize(drawn, size);
+      this.page.drawText(drawn, { x: RIGHT_EDGE - w, y: this.y - size, size, font, color });
       this.y -= lineHeight;
     }
     if (opts.gapAfter) this.y -= opts.gapAfter;
