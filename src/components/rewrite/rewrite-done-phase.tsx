@@ -1,25 +1,19 @@
 "use client";
 
 /**
- * Phase 3 of the rewrite modal: the generated PDF. Shows an inline preview (iframe on the signed
- * URL) plus actions — download PDF, toggle a side-by-side comparison, regenerate, and share the PDF
- * link to WhatsApp. DOCX export is deferred; its button is shown disabled rather than faked.
+ * Phase 3 of the rewrite modal: the generated PDF. Shows an inline preview (iframe) plus actions —
+ * share the actual PDF file to WhatsApp (Web Share API, so it's saved in the chat forever), toggle a
+ * side-by-side comparison, and regenerate. There is intentionally no direct download: the product
+ * flow is "save it to WhatsApp as a PDF", not "download to this device".
  */
-import { useState } from "react";
-import { Download, FileType2, Columns2, RefreshCw, MessageCircle } from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { Columns2, RefreshCw, MessageCircle } from "lucide-react";
 import type { ContractIssueRow } from "@/lib/db/contract-issues";
 import { Button } from "@/components/ui/button";
 import { ContractComparison } from "@/components/rewrite/contract-comparison";
 
-/** Normalize an Israeli phone number to wa.me's international form (972XXXXXXXXX), or null if invalid. */
-function normalizeIsraeliPhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  if (/^972\d{9}$/.test(digits)) return digits; // already international
-  if (/^0\d{9}$/.test(digits)) return "972" + digits.slice(1); // 05X-XXXXXXX
-  if (/^\d{9}$/.test(digits)) return "972" + digits; // missing leading 0
-  return null;
-}
+const SHARE_MESSAGE =
+  "שלום! מצורף חוזה השכירות המתוקן שהופק ב-LeaseLens, כולל התיקונים המומלצים לפי החוק.";
 
 export function RewriteDonePhase({
   pdfUrl,
@@ -31,22 +25,44 @@ export function RewriteDonePhase({
   onRegenerate: () => void;
 }) {
   const [showCompare, setShowCompare] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [file, setFile] = useState<File | null>(null);
 
-  function sendWhatsApp() {
-    const normalized = normalizeIsraeliPhone(phone);
-    if (!normalized) {
-      toast.error("מספר טלפון לא תקין. הזן מספר ישראלי, למשל 050-0000000.");
-      return;
+  // Pre-fetch the PDF as a File so navigator.share can hand the actual document to the OS share sheet
+  // synchronously on click (an await between the click and share() can drop the user-activation that
+  // Web Share requires). On CORS/network failure `file` stays null and we fall back to a wa.me link.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(pdfUrl);
+        const blob = await res.blob();
+        if (active) {
+          setFile(new File([blob], "contract-revised.pdf", { type: "application/pdf" }));
+        }
+      } catch {
+        /* fall back to the link on share */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [pdfUrl]);
+
+  async function shareWhatsApp() {
+    // Preferred (mobile): share the real PDF file — it lands in the WhatsApp chat as a document and
+    // stays there permanently, independent of the signed URL's expiry.
+    if (file && typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "חוזה מתוקן — LeaseLens", text: SHARE_MESSAGE });
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return; // user closed the share sheet
+        // otherwise fall through to the link
+      }
     }
-    const message =
-      `שלום! מצורף חוזה השכירות המתוקן שהופק ב-LeaseLens:\n${pdfUrl}\n\n` +
-      "החוזה כולל את התיקונים המומלצים לפי החוק. הקישור בתוקף ל-24 שעות.";
-    window.open(
-      `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+    // Fallback (desktop / no file-share support): open WhatsApp with the link prefilled.
+    const text = `${SHARE_MESSAGE}\n\n${pdfUrl}\n\n(הקישור בתוקף ל-24 שעות)`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -63,17 +79,20 @@ export function RewriteDonePhase({
         />
       )}
 
+      <div>
+        <Button
+          onClick={shareWhatsApp}
+          className="w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"
+        >
+          <MessageCircle className="h-4 w-4" />
+          שלח בוואטסאפ
+        </Button>
+        <p className="mt-1.5 text-center text-[11px] leading-snug text-muted-foreground">
+          החוזה יישלח כקובץ PDF שנשמר בצ׳אט. בדסקטופ — ייפתח וואטסאפ עם קישור (בתוקף ל-24 שעות).
+        </p>
+      </div>
+
       <div className="flex flex-wrap gap-2">
-        <Button asChild>
-          <a href={pdfUrl} download="contract-revised.pdf">
-            <Download className="h-4 w-4" />
-            הורד PDF
-          </a>
-        </Button>
-        <Button variant="outline" disabled title="בקרוב">
-          <FileType2 className="h-4 w-4" />
-          הורד DOCX
-        </Button>
         <Button variant="outline" onClick={() => setShowCompare((v) => !v)}>
           <Columns2 className="h-4 w-4" />
           {showCompare ? "הצג PDF" : "השווה מול המקורי"}
@@ -82,36 +101,6 @@ export function RewriteDonePhase({
           <RefreshCw className="h-4 w-4" />
           צור שוב
         </Button>
-      </div>
-
-      {/* Share to WhatsApp — opens WhatsApp with the PDF link prefilled (not an automated send). */}
-      <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-        <label htmlFor="wa-phone" className="mb-2 block text-sm font-medium">
-          שלח את החוזה בוואטסאפ
-        </label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            id="wa-phone"
-            type="tel"
-            inputMode="numeric"
-            dir="ltr"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="050-0000000"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          />
-          <Button
-            type="button"
-            onClick={sendWhatsApp}
-            className="shrink-0 bg-[#25D366] text-white hover:bg-[#20bd5a]"
-          >
-            <MessageCircle className="h-4 w-4" />
-            שלח בוואטסאפ
-          </Button>
-        </div>
-        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-          ייפתח וואטסאפ עם הודעה מוכנה הכוללת קישור לחוזה — לחיצה על ״שלח״ אצלך תשלים את השליחה.
-        </p>
       </div>
     </div>
   );
