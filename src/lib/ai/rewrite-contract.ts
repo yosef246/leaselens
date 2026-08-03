@@ -40,6 +40,7 @@ export interface OriginalSection {
 }
 export interface ApprovedFix {
   section_number: string | null;
+  original_text: string;
   category: string;
   suggested_fix: string;
 }
@@ -82,19 +83,24 @@ export async function rewriteContract(
   originals: OriginalSection[],
   approved: ApprovedFix[]
 ): Promise<{ document: RewriteResult; usage: ClaudeUsage }> {
-  // Map each approved fix to its section_number (first wins on duplicate keys).
-  const fixByKey = new Map<string, ApprovedFix>();
-  for (const f of approved) {
-    const key = f.section_number ?? "";
-    if (!fixByKey.has(key)) fixByKey.set(key, f);
-  }
-
-  // Only the originals that have an approved fix are sent to the model.
+  // Match each approved fix to its exact original clause BY TEXT. section_number is unreliable —
+  // most chunks have a null section_number, and keying on `section_number ?? ""` collapses every
+  // null-section clause into one bucket, so a single fix over-matches ALL of them (this sent 21
+  // sections to the model instead of the ~6 that were actually fixed, blowing past the 60s cap).
+  // original_text is the exact chunk text captured at analysis time, so it maps 1:1.
   const tasks: RewriteTask[] = [];
-  originals.forEach((o, i) => {
-    const fix = fixByKey.get(o.section_number ?? "");
-    if (fix) tasks.push({ ref: i, section_number: o.section_number, original: o.text, fix });
-  });
+  const usedRefs = new Set<number>();
+  for (const fix of approved) {
+    const ref = originals.findIndex((o, i) => !usedRefs.has(i) && o.text === fix.original_text);
+    if (ref === -1) continue;
+    usedRefs.add(ref);
+    tasks.push({
+      ref,
+      section_number: originals[ref].section_number,
+      original: originals[ref].text,
+      fix,
+    });
+  }
 
   const assemble = (rewritten: Map<number, string>): RewriteResult => ({
     title,

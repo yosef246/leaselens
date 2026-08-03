@@ -91,6 +91,7 @@ export async function POST(
           .map((c) => ({ section_number: c.section_number, text: c.text }));
         const approvedFixes: ApprovedFix[] = approved.map((i) => ({
           section_number: i.section_number,
+          original_text: i.original_text,
           category: i.category,
           suggested_fix: i.suggested_fix,
         }));
