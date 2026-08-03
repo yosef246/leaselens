@@ -242,6 +242,14 @@ export function IssuesReview({
 
             <p className="mb-3 text-sm leading-relaxed">{issue.explanation}</p>
 
+            {issue.law_reference && (
+              <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-chart-2/30 bg-chart-2/[0.06] px-3 py-2 text-sm text-chart-2">
+                <span aria-hidden>📖</span>
+                <span className="font-semibold">סעיף רלוונטי:</span>
+                <span>{issue.law_reference}</span>
+              </div>
+            )}
+
             <div className="mb-3">
               <label
                 htmlFor={`fix-${issue.id}`}
@@ -269,11 +277,6 @@ export function IssuesReview({
                   />
                   מאשר את התיקון
                 </label>
-                {issue.law_reference && (
-                  <span className="rounded-md bg-chart-2/10 px-2 py-1 font-mono text-xs text-chart-2">
-                    {issue.law_reference}
-                  </span>
-                )}
               </div>
               <Button
                 size="sm"

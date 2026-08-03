@@ -5,7 +5,11 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AuthCta } from "@/components/auth-cta";
 import { JsonLd } from "@/components/json-ld";
+import { TrustBadges } from "@/components/marketing/trust-badges";
+import { Comparison } from "@/components/marketing/comparison";
+import { FaqAccordion } from "@/components/marketing/faq-accordion";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
+import { FAQ_JSONLD } from "@/lib/faq";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,8 +26,8 @@ export const metadata: Metadata = {
 const FEATURES = [
   {
     icon: Search,
-    title: "Hybrid RAG",
-    body: "חיפוש vector + keyword לדיוק מקסימלי בעברית — גם כשאתה שואל ב״פיקדון״ והחוק אומר ״ערובה״.",
+    title: "חיפוש היברידי חכם",
+    body: "vector + keyword לדיוק מקסימלי בעברית — גם כשאתה שואל ב״פיקדון״ והחוק אומר ״ערובה״.",
   },
   {
     icon: Quote,
@@ -33,42 +37,21 @@ const FEATURES = [
   {
     icon: Scale,
     title: "חוק ישראלי מובנה",
-    body: "חוק השכירות והשאילה, החוזים האחידים, המקרקעין, הגנת הדייר ועוד — 11 חוקים.",
+    body: "חוק השכירות והשאילה, שכירות הוגנת, הגנת הדייר ועוד — הניתוח מעוגן בחקיקה.",
   },
 ];
 
 const STEPS = [
-  { icon: Upload, title: "העלה חוזה", body: "גרור PDF של חוזה השכירות. הטקסט מחולץ ומפורסר אוטומטית." },
-  { icon: Sparkles, title: "המערכת מנתחת", body: "החוזה מוטמע ונשלף מול קורפוס החוק הישראלי." },
-  { icon: MessageSquareText, title: "שאל בעברית", body: "״האם סעיף הפיקדון חוקי?״ — קבל תשובה מצוטטת בשניות." },
-];
-
-// Q&A phrased for AEO (AI answer engines) — the same data drives both the visible section and the
-// FAQPage structured data below. Answers are grounded in what the product actually does.
-const FAQ = [
-  {
-    q: "איך מנתחים חוזה שכירות ב-LeaseLens?",
-    a: "מעלים PDF של חוזה השכירות, המערכת מחלצת את הטקסט, מטמיעה אותו ומשווה מול קורפוס החוק הישראלי (RAG), ומחזירה תשובות מצוטטות — עם הפניה לסעיף בחוזה ולסעיף בחוק.",
-  },
-  {
-    q: "כמה עולה לבדוק חוזה שכירות?",
-    a: "אפשר לנסות מיד עם חוזה דוגמה ללא עלות וללא הרשמה, וההרשמה לניתוח החוזה שלך היא חינמית.",
-  },
-  {
-    q: "האם המידע שלי מאובטח?",
-    a: "כל חוזה נשמר תחת החשבון שלך בלבד עם בידוד ברמת השורה (RLS) בבסיס הנתונים — אף משתמש אחר אינו יכול לגשת לחוזים שלך.",
-  },
-  {
-    q: "על אילו חוקים מתבססת הבדיקה?",
-    a: "על 11 חוקים ישראליים רלוונטיים, ובהם חוק השכירות והשאילה, חוק החוזים האחידים, חוק המקרקעין וחוק הגנת הדייר.",
-  },
+  { icon: Upload, title: "מעלים את החוזה", body: "גוררים PDF של חוזה השכירות. הטקסט מחולץ ומפורסר אוטומטית." },
+  { icon: Sparkles, title: "השופט מנתח", body: "החוזה נשלף מול קורפוס החוק הישראלי, וסעיפים בעייתיים מסומנים." },
+  { icon: MessageSquareText, title: "מקבלים חוזה מתוקן", body: "מאשרים תיקונים ומורידים PDF של חוזה מתוקן, מוכן לחתימה." },
 ];
 
 function HeroMockup() {
   return (
     <div className="relative">
-      <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-primary/15 to-transparent blur-2xl" />
-      <Card className="shadow-xl ring-1 ring-border/60">
+      <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/15 to-transparent blur-3xl" />
+      <Card className="shadow-2xl ring-1 ring-border/60">
         <CardContent className="space-y-4 p-5">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -94,9 +77,6 @@ function HeroMockup() {
             <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs text-primary">
               <span className="font-mono">[א]</span> סעיף 4 בחוזה
             </span>
-            <span className="inline-flex items-center rounded-md border border-amber-500/40 px-2 py-1 text-xs text-amber-600 dark:text-amber-400">
-              keyword
-            </span>
           </div>
         </CardContent>
       </Card>
@@ -115,45 +95,35 @@ const SOFTWARE_SCHEMA = {
   description: SITE_DESCRIPTION,
 };
 
-const FAQ_SCHEMA = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQ.map((item) => ({
-    "@type": "Question",
-    name: item.q,
-    acceptedAnswer: { "@type": "Answer", text: item.a },
-  })),
-};
-
 export default function LandingPage() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <JsonLd data={[SOFTWARE_SCHEMA, FAQ_SCHEMA]} />
+      <JsonLd data={[SOFTWARE_SCHEMA, FAQ_JSONLD]} />
       <SiteHeader />
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-8 overflow-hidden px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 md:grid-cols-2 md:py-24">
+        <section className="mx-auto grid max-w-6xl items-center gap-10 overflow-hidden px-4 py-16 sm:gap-14 sm:px-6 sm:py-24 md:grid-cols-2 md:py-32">
           <div className="text-center md:text-right">
-            <Badge variant="secondary" className="mb-4">
-              מבוסס RAG · חוק ישראלי · עברית
+            <Badge variant="secondary" className="mb-5">
+              מבוסס AI · חוק ישראלי · עברית
             </Badge>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl md:text-5xl">
-              נתח חוזי שכירות מול החוק הישראלי —{" "}
-              <span className="text-primary">ב-30 שניות</span>
+            <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
+              דע בדיוק על מה{" "}
+              <span className="text-primary">אתה חותם</span>
             </h1>
-            <p className="mt-5 text-lg text-muted-foreground">
-              העלה חוזה, וקבל ניתוח משפטי מבוסס-ציטוטים מהחוק — בעברית.
+            <p className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-muted-foreground md:mx-0 md:text-xl">
+              העלה חוזה שכירות, וקבל תוך דקות ניתוח מבוסס-ציטוטים מהחוק — וחוזה מתוקן מוכן לחתימה.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button asChild size="lg" className="w-full sm:w-auto">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+              <Button asChild size="xl" className="w-full sm:w-auto">
                 <Link href="/demo">נסה עם חוזה דוגמה</Link>
               </Button>
               <AuthCta
-                size="lg"
+                size="xl"
                 variant="outline"
                 className="w-full sm:w-auto"
-                guestLabel="התחבר"
+                guestLabel="התחל עכשיו"
                 authedLabel="לדשבורד"
               />
             </div>
@@ -161,55 +131,98 @@ export default function LandingPage() {
           <HeroMockup />
         </section>
 
+        {/* Trust badges */}
+        <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
+          <TrustBadges />
+        </section>
+
         {/* Features */}
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <div className="grid gap-5 sm:grid-cols-3">
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+          <div className="grid gap-6 sm:grid-cols-3">
             {FEATURES.map((f) => (
-              <Card key={f.title} className="h-full">
+              <Card key={f.title} className="h-full border-border/60">
                 <CardHeader>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <f.icon className="h-6 w-6" />
                   </div>
-                  <CardTitle className="pt-2">{f.title}</CardTitle>
+                  <CardTitle className="pt-3 text-lg">{f.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">{f.body}</CardContent>
+                <CardContent className="text-[15px] leading-relaxed text-muted-foreground">
+                  {f.body}
+                </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
         {/* How it works */}
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <h2 className="mb-10 text-center text-2xl font-bold tracking-tight">איך זה עובד</h2>
-          <div className="grid gap-8 sm:grid-cols-3">
-            {STEPS.map((s, i) => (
-              <div key={s.title} className="flex flex-col items-center text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <s.icon className="h-7 w-7" />
+        <section className="border-y border-border/60 bg-muted/30">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+            <h2 className="mb-14 text-center text-3xl font-bold tracking-tight sm:text-4xl">איך זה עובד</h2>
+            <div className="grid gap-10 sm:grid-cols-3">
+              {STEPS.map((s, i) => (
+                <div key={s.title} className="flex flex-col items-center text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <s.icon className="h-8 w-8" />
+                  </div>
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="text-sm font-bold text-primary">{i + 1}</span>
+                    <h3 className="text-lg font-semibold">{s.title}</h3>
+                  </div>
+                  <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{s.body}</p>
                 </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-sm font-bold text-primary">{i + 1}</span>
-                  <h3 className="font-semibold">{s.title}</h3>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{s.body}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* FAQ — answers common questions directly (AEO) */}
-        <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-          <h2 className="mb-8 text-center text-2xl font-bold tracking-tight">שאלות נפוצות</h2>
-          <dl className="space-y-4">
-            {FAQ.map((item) => (
-              <div key={item.q} className="rounded-lg border border-border/60 p-5">
-                <dt>
-                  <h3 className="font-semibold">{item.q}</h3>
-                </dt>
-                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</dd>
-              </div>
-            ))}
-          </dl>
+        {/* Comparison */}
+        <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-28">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tight sm:text-4xl">
+            למה לא סתם לחתום?
+          </h2>
+          <p className="mx-auto mb-12 max-w-xl text-center text-lg text-muted-foreground">
+            ההבדל בין לחתום על מסמך שלא הבנת — לבין להיכנס לחוזה בידיים פתוחות.
+          </p>
+          <Comparison />
+        </section>
+
+        {/* FAQ */}
+        <section className="border-t border-border/60 bg-muted/30">
+          <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-28">
+            <h2 className="mb-10 text-center text-3xl font-bold tracking-tight sm:text-4xl">
+              שאלות נפוצות
+            </h2>
+            <div className="rounded-2xl border border-border/60 bg-card px-6 shadow-sm sm:px-8">
+              <FaqAccordion />
+            </div>
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              לא מצאת תשובה?{" "}
+              <Link href="/faq" className="font-medium text-primary hover:underline">
+                לכל השאלות
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">מוכן לבדוק את החוזה שלך?</h2>
+          <p className="mx-auto mt-4 max-w-lg text-lg text-muted-foreground">
+            התחל עם חוזה דוגמה, או העלה את החוזה שלך עכשיו.
+          </p>
+          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button asChild size="xl" className="w-full sm:w-auto">
+              <Link href="/demo">נסה עם חוזה דוגמה</Link>
+            </Button>
+            <AuthCta
+              size="xl"
+              variant="outline"
+              className="w-full sm:w-auto"
+              guestLabel="התחל עכשיו"
+              authedLabel="לדשבורד"
+            />
+          </div>
         </section>
       </main>
 

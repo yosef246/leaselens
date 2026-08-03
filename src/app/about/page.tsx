@@ -49,9 +49,11 @@ export default function AboutPage() {
       <JsonLd data={ABOUT_SCHEMA} />
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">אודות LeaseLens</h1>
-        <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6 sm:py-24">
+        <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
+          אודות LeaseLens
+        </h1>
+        <p className="mt-6 text-xl leading-relaxed text-muted-foreground">
           LeaseLens נולדה מתוך פער פשוט: רוב השוכרים בישראל חותמים על חוזה שכירות בלי לדעת אילו
           סעיפים בו חורגים מהחוק. המערכת קוראת את החוזה שלך, משווה אותו מול קורפוס החוק הישראלי,
           ומחזירה ניתוח בעברית — עם הפניה מדויקת לסעיף בחוזה ולסעיף בחוק.

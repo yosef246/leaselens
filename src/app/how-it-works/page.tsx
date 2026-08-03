@@ -57,13 +57,15 @@ export default function HowItWorksPage() {
       <JsonLd data={HOWTO_SCHEMA} />
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">איך זה עובד</h1>
-        <p className="mt-5 text-lg text-muted-foreground">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 sm:px-6 sm:py-24">
+        <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
+          איך זה עובד
+        </h1>
+        <p className="mt-6 text-xl text-muted-foreground">
           משלושה צעדים ועד ניתוח משפטי מבוסס-ציטוטים — בעברית, בשניות.
         </p>
 
-        <ol className="mt-12 space-y-8">
+        <ol className="mt-14 space-y-8">
           {STEPS.map((s, i) => (
             <li key={s.title} className="flex gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -80,11 +82,11 @@ export default function HowItWorksPage() {
           ))}
         </ol>
 
-        <div className="mt-12 flex flex-col gap-3 sm:flex-row">
-          <Button asChild size="lg">
+        <div className="mt-14 flex flex-col gap-3 sm:flex-row">
+          <Button asChild size="xl">
             <Link href="/demo">נסה עם חוזה דוגמה</Link>
           </Button>
-          <AuthCta size="lg" variant="outline" guestLabel="התחבר והעלה חוזה" authedLabel="לדשבורד" />
+          <AuthCta size="xl" variant="outline" guestLabel="התחבר והעלה חוזה" authedLabel="לדשבורד" />
         </div>
       </main>
 
