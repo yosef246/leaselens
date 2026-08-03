@@ -14,6 +14,13 @@ import type { ContractRow, ContractStatus } from "@/lib/db/contracts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 const TRANSIENT: ContractStatus[] = ["parsing", "parsed"];
@@ -35,6 +42,7 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState<Record<string, boolean>>({});
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
 
   const anyTransient = useMemo(
     () =>
@@ -80,33 +88,26 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
     [router]
   );
 
-  const remove = useCallback(
-    async (id: string, title: string) => {
-      if (
-        !window.confirm(
-          `למחוק את "${title}"?\nהפעולה בלתי הפיכה — הניתוח, הסעיפים והחוזה המתוקן יימחקו לצמיתות.`
-        )
-      ) {
-        return;
-      }
-      setDeleting((d) => ({ ...d, [id]: true }));
-      try {
-        const res = await fetch(`/api/contracts/${id}`, { method: "DELETE" });
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        if (!res.ok) throw new Error(data.error ?? "המחיקה נכשלה");
-        toast.success("החוזה נמחק");
-        router.refresh();
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "המחיקה נכשלה");
-        setDeleting((d) => {
-          const n = { ...d };
-          delete n[id];
-          return n;
-        });
-      }
-    },
-    [router]
-  );
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    setPendingDelete(null);
+    setDeleting((d) => ({ ...d, [id]: true }));
+    try {
+      const res = await fetch(`/api/contracts/${id}`, { method: "DELETE" });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "המחיקה נכשלה");
+      toast.success("החוזה נמחק");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "המחיקה נכשלה");
+      setDeleting((d) => {
+        const n = { ...d };
+        delete n[id];
+        return n;
+      });
+    }
+  }, [pendingDelete, router]);
 
   if (contracts.length === 0) {
     return (
@@ -121,7 +122,8 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {contracts.map((c) => {
         const isBusy = busy[c.id] || TRANSIENT.includes(c.status);
         const canProcess = !isBusy && (c.status === "uploaded" || c.status === "failed");
@@ -142,7 +144,7 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
                     size="icon-sm"
                     variant="ghost"
                     className="text-muted-foreground hover:text-destructive"
-                    onClick={() => remove(c.id, c.title)}
+                    onClick={() => setPendingDelete({ id: c.id, title: c.title })}
                     disabled={deleting[c.id]}
                     aria-label="מחק חוזה"
                     title="מחק חוזה"
@@ -187,6 +189,28 @@ export function ContractList({ contracts }: { contracts: ContractRow[] }) {
           </Card>
         );
       })}
-    </div>
+      </div>
+
+      <Dialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>למחוק את החוזה?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete
+                ? `״${pendingDelete.title}״ וכל מה שנגזר ממנו — הניתוח, הסעיפים והחוזה המתוקן — יימחקו לצמיתות. לא ניתן לשחזר.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="destructive" onClick={confirmDelete}>
+              מחק לצמיתות
+            </Button>
+            <Button variant="outline" onClick={() => setPendingDelete(null)}>
+              ביטול
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
