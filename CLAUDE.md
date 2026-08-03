@@ -16,7 +16,11 @@ OpenAI embeddings. RAG throughout — retrieve relevant law/contract chunks, nev
   defaults to adaptive thinking, which ~2x'd latency and pushed the 40-call fan-out past Vercel's
   60s cap (504). An A/B on the sample contract showed both modes catch the serious clauses; the
   diffs were categorization + borderline items + run-to-run noise, with no ground truth to call a
-  winner. `/rewrite` keeps thinking ON (single call, quality matters, fits 60s).
+  winner. **`/rewrite` also runs `thinking: "disabled"` AND fans out per fixed section** (one small
+  `generateObject` per approved clause, bounded concurrency in `rewrite-contract.ts`). A single
+  combined call ran ~50s and intermittently crept past the 60s cap when output ran long (Claude
+  finished + logged usage, but the function was killed before the client got the PDF). Per-section
+  fan-out bounds wall-clock by the slowest clause (~15-25s), not the sum.
 
 ## Migrations
 Supabase migrations live in `supabase/migrations/`. They are NOT auto-applied — run each new one
