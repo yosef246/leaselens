@@ -33,7 +33,6 @@ const RIGHT_EDGE = PAGE_W - MARGIN;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
 const SIZE_TITLE = 20;
-const SIZE_HEADING = 13;
 const SIZE_BODY = 11;
 const SIZE_FOOTER = 8;
 const LINE_FACTOR = 1.5;
@@ -44,6 +43,17 @@ const MUTED = rgb(0.42, 0.42, 0.46);
 async function loadFont(file: string): Promise<Uint8Array> {
   const p = path.join(process.cwd(), "src", "lib", "pdf", "fonts", file);
   return new Uint8Array(await readFile(p));
+}
+
+// Heebo (subsetted) carries no emoji/pictograph glyphs, so any such character renders as tofu (▯).
+// The disclaimer's leading ⚠️ is the one that actually occurs; strip the whole class defensively so
+// nothing stray ever reaches the page. Legal contract text contains none of these. ₪ (U+20AA) and
+// en-dash (U+2013) sit below this range and are preserved.
+function stripUnsupported(text: string): string {
+  return text
+    .replace(/[\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{1F000}-\u{1FAFF}]/gu, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .trimStart();
 }
 
 /** Word-wrap logical text to lines that fit maxWidth (measured with the embedded font). */
@@ -93,7 +103,7 @@ class Cursor {
     const color = opts.color ?? INK;
     const lineHeight = size * LINE_FACTOR;
 
-    for (const logicalLine of wrapLogical(text, font, size, CONTENT_W)) {
+    for (const logicalLine of wrapLogical(stripUnsupported(text), font, size, CONTENT_W)) {
       this.ensureSpace(lineHeight);
       // Draw in LOGICAL order (fontkit handles Hebrew RTL); only fix embedded numerals.
       const drawn = fixRtlNumerals(logicalLine);
@@ -131,9 +141,22 @@ export async function renderContractPdf(doc: RewriteDocument): Promise<Uint8Arra
   cursor.drawBlock(doc.title, { size: SIZE_TITLE, bold: true, gapAfter: 10 });
   cursor.drawDivider();
 
-  for (const section of doc.sections) {
-    const heading = section.number ? `סעיף ${section.number}` : null;
-    if (heading) cursor.drawBlock(heading, { size: SIZE_HEADING, bold: true, gapAfter: 2 });
+  // Long clauses get split across several ingestion chunks that all carry the same section number.
+  // Coalesce consecutive same-number sections so a clause renders as ONE block instead of repeating
+  // (e.g. "סעיף 9" appeared 3× before this). We don't draw a separate "סעיף N" heading: the source
+  // text already opens each clause with its own number ("4. דמי השכירות"), so an added heading both
+  // duplicated that number and multiplied per chunk.
+  const sections: RewriteSection[] = [];
+  for (const s of doc.sections) {
+    const prev = sections[sections.length - 1];
+    if (prev && s.number !== null && prev.number === s.number) {
+      prev.text = `${prev.text}\n${s.text}`;
+    } else {
+      sections.push({ number: s.number, text: s.text });
+    }
+  }
+
+  for (const section of sections) {
     cursor.drawBlock(section.text, { gapAfter: 12 });
   }
 
