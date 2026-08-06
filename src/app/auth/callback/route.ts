@@ -9,7 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // Only accept a LOCAL path for `next` (starts with a single "/", not "//" or "/\") — otherwise an
+  // attacker-supplied ?next= could steer the post-login redirect off-origin (open redirect / phishing).
+  const rawNext = searchParams.get("next") ?? "/dashboard";
+  const next = /^\/(?![/\\])/.test(rawNext) ? rawNext : "/dashboard";
 
   if (code) {
     const supabase = await createClient();

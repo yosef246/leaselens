@@ -140,18 +140,27 @@ export async function rewriteContract(
   // already-approved, user-reviewed fixes applied to specific clauses (constrained rephrasing, not
   // open-ended reasoning). Fan-out + no-thinking is what keeps the request comfortably under 60s.
   const outcomes = await mapPool(tasks, CONCURRENCY, async (task) => {
-    const { object, usage, providerMetadata } = await generateObject({
-      model: anthropic(MODEL),
-      schema: llmSchema,
-      system: cachedSystem(SYSTEM),
-      prompt: buildTaskPrompt(task),
-      providerOptions: { anthropic: { thinking: { type: "disabled" } } },
-    });
-    return {
-      ref: task.ref,
-      text: object.text.trim(),
-      usage: extractUsage(usage, providerMetadata),
-    };
+    // Fail-soft per section: a single call hitting a transient 429/5xx/timeout must not sink the
+    // whole rewrite. On failure we return empty text and the section keeps its ORIGINAL wording
+    // (assemble() falls back to the original for any ref we don't fill). No retry on purpose —
+    // retrying would add latency and risk the 60s cap; one degraded clause beats a failed document.
+    try {
+      const { object, usage, providerMetadata } = await generateObject({
+        model: anthropic(MODEL),
+        schema: llmSchema,
+        system: cachedSystem(SYSTEM),
+        prompt: buildTaskPrompt(task),
+        providerOptions: { anthropic: { thinking: { type: "disabled" } } },
+      });
+      return {
+        ref: task.ref,
+        text: object.text.trim(),
+        usage: extractUsage(usage, providerMetadata),
+      };
+    } catch (err) {
+      console.error(`rewriteContract: section ref ${task.ref} failed, keeping original`, err);
+      return { ref: task.ref, text: "", usage: EMPTY_USAGE };
+    }
   });
 
   const rewritten = new Map<number, string>();
