@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { SignOutButton } from "@/components/sign-out-button";
 
 /** App navbar (dashboard + results). Shows the signed-in user + sign-out. */
 export function DashboardHeader({ email }: { email?: string | null }) {
@@ -21,11 +21,7 @@ export function DashboardHeader({ email }: { email?: string | null }) {
             >
               {initial}
             </span>
-            <form action="/auth/signout" method="post">
-              <Button type="submit" variant="ghost" size="sm">
-                התנתקות
-              </Button>
-            </form>
+            <SignOutButton />
           </div>
         </div>
       </div>
