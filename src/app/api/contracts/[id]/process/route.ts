@@ -29,6 +29,12 @@ import { embedTexts } from "@/lib/embeddings/openai";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Backstop against a pathological, text-dense PDF producing thousands of chunks and blowing the 60s
+// budget on embedding. A real residential lease is well under this; the tail is dropped only in the
+// extreme. Embedding batches run in parallel (see embedTexts), so this is a safety net, not the
+// primary latency control.
+const MAX_CHUNKS = 500;
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -67,7 +73,7 @@ export async function POST(
       return NextResponse.json({ error: SCANNED_ERROR_MESSAGE }, { status: 422 });
     }
 
-    const chunks = chunkContract(text);
+    const chunks = chunkContract(text).slice(0, MAX_CHUNKS);
     if (chunks.length === 0) {
       await updateContractStatus(user.id, id, "failed");
       return NextResponse.json(

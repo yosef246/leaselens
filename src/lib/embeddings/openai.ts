@@ -27,28 +27,32 @@ function getClient(): OpenAI {
 
 /**
  * Batch-embeds an array of strings with text-embedding-3-small (1536 dims). Splits into
- * batches of MAX_BATCH_SIZE. Returns embeddings in the same order as the input `texts`
- * (OpenAI's response `index` field is used to re-sort each batch defensively).
+ * batches of MAX_BATCH_SIZE and embeds the batches IN PARALLEL, so a text-dense contract doesn't
+ * pay the batch count in serial round-trips (which could push /process past its 60s cap). Returns
+ * embeddings in the same order as the input `texts`: batches are flattened in order and each batch
+ * is re-sorted by OpenAI's `index` field defensively.
  */
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   const openai = getClient();
-  const results: number[][] = [];
 
+  const batches: string[][] = [];
   for (let i = 0; i < texts.length; i += MAX_BATCH_SIZE) {
-    const batch = texts.slice(i, i + MAX_BATCH_SIZE);
-    const response = await openai.embeddings.create({
-      model: EMBEDDING_MODEL,
-      input: batch,
-    });
-    const ordered = [...response.data].sort((a, b) => a.index - b.index);
-    for (const item of ordered) {
-      results.push(item.embedding);
-    }
+    batches.push(texts.slice(i, i + MAX_BATCH_SIZE));
   }
 
-  return results;
+  const embeddedBatches = await Promise.all(
+    batches.map(async (batch) => {
+      const response = await openai.embeddings.create({
+        model: EMBEDDING_MODEL,
+        input: batch,
+      });
+      return [...response.data].sort((a, b) => a.index - b.index).map((item) => item.embedding);
+    })
+  );
+
+  return embeddedBatches.flat();
 }
 
 /** Embeds a single string (e.g. a chat question or an analysis query). */
